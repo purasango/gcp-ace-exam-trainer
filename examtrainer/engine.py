@@ -44,6 +44,7 @@ class QuizSession:
     flagged: set[int] = field(default_factory=set)
     started: float = field(default_factory=time.time)
     finished: float | None = None
+    recorded: set[int] = field(default_factory=set)  # istatistiğe yazılmış cevaplar
 
     def is_correct(self, idx: int) -> bool:
         return self.answers.get(idx, set()) == self.items[idx].correct
@@ -51,6 +52,15 @@ class QuizSession:
     def answer(self, idx: int, selection) -> bool:
         self.answers[idx] = set(selection)
         return self.is_correct(idx)
+
+    def record(self, idx: int, stats: Stats) -> None:
+        """Cevabı istatistiğe bir kez yazıp diske kaydeder (pratikte kontrol anında);
+        oturum yarıda kapansa da ilerleme kaybolmaz."""
+        if idx in self.recorded or idx not in self.answers:
+            return
+        self.recorded.add(idx)
+        stats.record_answer(self.items[idx].q["id"], self.is_correct(idx))
+        stats.save()
 
     def remaining(self) -> int | None:
         if self.time_limit is None:
@@ -62,7 +72,8 @@ class QuizSession:
             self.finished = time.time()
             if stats is not None:
                 for i, it in enumerate(self.items):
-                    if i in self.answers:
+                    if i in self.answers and i not in self.recorded:
+                        self.recorded.add(i)
                         stats.record_answer(it.q["id"], self.is_correct(i))
         exam = EXAMS[self.exam_code]
         per_domain: dict[int, list[int]] = {}

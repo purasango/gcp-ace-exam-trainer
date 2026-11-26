@@ -96,6 +96,8 @@ def validate_question(q: dict, exam_code: str | None = None) -> dict:
         "explanation": str(q.get("explanation", "")).strip(),
         "source": str(q.get("source", "builtin")),
         "source_url": str(q.get("source_url", "") or ""),
+        "objective": str(q.get("objective", "") or ""),
+        "check": [str(c) for c in q["check"]] if isinstance(q.get("check"), list) else [],
         "created": q.get("created") or "",
         "en": en,
     }
@@ -128,7 +130,10 @@ class QuestionBank:
                 for q in _read_json(self.builtin_dir / exam.bank_file, []):
                     self._add(q, exam.code, "builtin")
         for q in _read_json(self.user_file, []):
-            self._add(q, None, None)
+            added = self._add(q, None, None)
+            if added and added["source"] == "builtin":
+                # Kullanıcı dosyasındaki soru hazır sayılmaz; aksi halde silinemez.
+                added["source"] = "ice-aktarim"
 
     def _add(self, raw: dict, exam_code, source) -> dict | None:
         try:
@@ -176,7 +181,8 @@ class QuestionBank:
             if self.is_duplicate(q):
                 errors.append(f"#{i + 1}: zaten bankada var")
                 continue
-            q["source"] = raw.get("source") or source
+            raw_source = raw.get("source")
+            q["source"] = raw_source if raw_source and raw_source != "builtin" else source
             q["created"] = q["created"] or stamp
             q["id"] = f"{q['exam'].lower()}-u{int(time.time()*1000)}-{len(stored)}"
             stored.append(q)

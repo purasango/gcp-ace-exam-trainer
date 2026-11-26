@@ -1,4 +1,4 @@
-# Kişisel veriler (ilerleme, ayarlar ve API anahtarı) — asla commit'lemeyin
+# Kişisel veriler (ilerleme ve ayarlar) — asla commit'lemeyin
 data/
 __pycache__/
 *.pyc

@@ -2,9 +2,7 @@
 from __future__ import annotations
 
 import json
-import queue
 import sys
-import threading
 import tkinter as tk
 from tkinter import filedialog, font as tkfont, messagebox, ttk
 
@@ -119,38 +117,6 @@ class App(tk.Tk):
 
     def show_results(self, session: QuizSession, summary: dict):
         self.switch(ResultScreen, session, summary)
-
-    def run_bg(self, work, on_done, on_error, progress=None):
-        """work(progress_cb) işini arka planda çalıştırır; sonuçları ana thread'e taşır."""
-        q: queue.Queue = queue.Queue()
-
-        def runner():
-            try:
-                res = work(lambda m: q.put(("progress", m)))
-                q.put(("done", res))
-            except Exception as e:  # noqa: BLE001 - kullanıcıya gösterilecek
-                q.put(("error", e))
-
-        threading.Thread(target=runner, daemon=True).start()
-
-        def poll():
-            try:
-                while True:
-                    kind, val = q.get_nowait()
-                    if kind == "progress":
-                        if progress:
-                            progress(val)
-                    elif kind == "done":
-                        on_done(val)
-                        return
-                    else:
-                        on_error(val)
-                        return
-            except queue.Empty:
-                pass
-            self.after(150, poll)
-
-        self.after(150, poll)
 
 
 # ----------------------------------------------------------------------------- Ana ekran
@@ -623,6 +589,7 @@ class QuizScreen(ttk.Frame):
                                                 f"siz {len(sel)} seçtiniz. Yine de kontrol edilsin mi?"):
                 return
         self.s.answer(self.idx, sel)
+        self.s.record(self.idx, self.app.stats)
         self.checked.add(self.idx)
         self.render()
 
