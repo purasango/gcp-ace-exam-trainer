@@ -114,3 +114,8 @@ data/                   İlerleme verileri (otomatik oluşur, git'e girmez)
   Güncel rehber: <https://cloud.google.com/learn/certification/cloud-engineer>
 - Google geçme notunu açıklamaz; uygulama %70'i hedef olarak kullanır.
 - Bu proje Google ile bağlantılı değildir; sorular özgün pratik sorularıdır, gerçek sınav soruları değildir.
+
+## Lisans
+
+[MIT](LICENSE). Google Cloud, Google Cloud Platform ve Associate Cloud Engineer, Google LLC'nin ticari markalarıdır;
+bu proje Google ile bağlantılı değildir ve Google tarafından onaylanmamıştır.
