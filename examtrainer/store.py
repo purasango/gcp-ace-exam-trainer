@@ -16,91 +16,169 @@ DATA_DIR = Path(os.environ.get("GCP_TRAINER_DATA", APP_DIR / "data"))
 DIFFICULTIES = ("kolay", "orta", "zor")
 
 
+# İçe aktarma ve kayıtlı veri için üst sınırlar (kötü niyetli/bozuk dosyaya karşı).
+MAX_IMPORT_BYTES = 5 * 1024 * 1024
+MAX_IMPORT_QUESTIONS = 2000
+_MAX_LEN = {"question": 4000, "option": 1000, "explanation": 8000, "topic": 200,
+            "source_url": 2000, "check": 300, "short": 100}
+
+
 def _read_json(path: Path, default):
+    """JSON dosyasını okur. Dosya yoksa, bozuksa veya beklenen türde (default'un türü) değilse
+    default döner; bozuk dosya kaybolmasın diye yedeklenir."""
     try:
         with open(path, encoding="utf-8") as f:
-            return json.load(f)
+            data = json.load(f)
     except FileNotFoundError:
         return default
-    except (json.JSONDecodeError, OSError):
-        # Bozuk dosyayı kaybetmemek için yedekle, varsayılanla devam et.
-        try:
-            path.rename(path.with_suffix(path.suffix + f".bozuk-{int(time.time())}"))
-        except OSError:
-            pass
-        return default
+    except (ValueError, OSError, RecursionError):  # JSONDecodeError/UnicodeDecodeError ValueError'dur
+        data = None
+    if isinstance(data, type(default)):
+        return data
+    try:
+        path.rename(path.with_suffix(path.suffix + f".bozuk-{time.time_ns()}"))
+    except OSError:
+        pass
+    return default
 
 
 def _write_json(path: Path, data) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp = tempfile.mkstemp(dir=path.parent, suffix=".tmp")
-    with os.fdopen(fd, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-    os.replace(tmp, path)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, path)
+    except BaseException:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
 
 
 class ValidationError(ValueError):
     pass
 
 
+def _text(value, field: str, limit: str, default: str | None = None) -> str:
+    """Metin alanını doğrular: str (veya bool olmayan sayı) olmalı ve uzunluk sınırını aşmamalı."""
+    if value is None and default is not None:
+        return default
+    if isinstance(value, bool) or not isinstance(value, (str, int, float)):
+        raise ValidationError(f"'{field}' metin olmalı")
+    value = str(value).strip()
+    if len(value) > _MAX_LEN[limit]:
+        raise ValidationError(f"'{field}' çok uzun")
+    return value
+
+
+def _options(raw, field: str) -> list[str]:
+    if not isinstance(raw, list) or not 2 <= len(raw) <= 8:
+        raise ValidationError(f"'{field}' 2-8 arası seçenek olmalı")
+    opts = [_text(o, field, "option") for o in raw]
+    if any(not o for o in opts) or len(set(opts)) != len(opts):
+        raise ValidationError("Seçenekler boş veya tekrarlı olamaz")
+    return opts
+
+
+def _english(en, n_options: int):
+    """İsteğe bağlı İngilizce karşılık; eksik veya hatalıysa None (soru Türkçe gösterilir)."""
+    if not isinstance(en, dict):
+        return None
+    try:
+        question = _text(en.get("question"), "en.question", "question", "")
+        options = _options(en.get("options"), "en.options")
+        explanation = _text(en.get("explanation"), "en.explanation", "explanation", "")
+    except ValidationError:
+        return None
+    if not question or len(options) != n_options:
+        return None
+    return {"question": question, "options": options, "explanation": explanation}
+
+
 def validate_question(q: dict, exam_code: str | None = None) -> dict:
-    """Bir soruyu doğrular ve normalize edilmiş kopyasını döndürür."""
+    """Bir soruyu doğrular ve normalize edilmiş kopyasını döndürür.
+    Hatalı her girdi için yalnızca ValidationError fırlatır."""
     if not isinstance(q, dict):
         raise ValidationError("Soru bir nesne olmalı")
-    text = str(q.get("question", "")).strip()
-    options = q.get("options")
-    correct = q.get("correct")
+    text = _text(q.get("question"), "question", "question", "")
     if not text:
         raise ValidationError("Soru metni boş")
-    if not isinstance(options, list) or not 2 <= len(options) <= 8:
-        raise ValidationError("2-8 arası seçenek olmalı")
-    options = [str(o).strip() for o in options]
-    if any(not o for o in options) or len(set(options)) != len(options):
-        raise ValidationError("Seçenekler boş veya tekrarlı olamaz")
-    if isinstance(correct, int):
+    options = _options(q.get("options"), "options")
+    correct = q.get("correct")
+    if isinstance(correct, int) and not isinstance(correct, bool):
         correct = [correct]
     if (not isinstance(correct, list) or not correct
-            or not all(isinstance(c, int) and 0 <= c < len(options) for c in correct)
+            or not all(isinstance(c, int) and not isinstance(c, bool) and 0 <= c < len(options) for c in correct)
             or len(set(correct)) != len(correct) or len(correct) >= len(options)):
         raise ValidationError("Doğru cevap indeksleri geçersiz")
-    exam = (q.get("exam") or exam_code or "").upper()
+    exam = q.get("exam") or exam_code or ""
+    if not isinstance(exam, str):
+        raise ValidationError("'exam' metin olmalı")
+    exam = exam.upper()
     if exam not in EXAMS:
-        raise ValidationError(f"Bilinmeyen sınav: {exam!r}")
+        raise ValidationError(f"Bilinmeyen sınav: {exam[:20]!r}")
     domain = q.get("domain", 1)
+    if isinstance(domain, bool) or not isinstance(domain, (int, str)):
+        domain = 1
     try:
         domain = int(domain)
-    except (TypeError, ValueError):
+    except ValueError:
         domain = 1
     if domain not in EXAMS[exam].domains:
         domain = min(EXAMS[exam].domains)
-    en = q.get("en")
-    if not (isinstance(en, dict) and str(en.get("question", "")).strip()
-            and isinstance(en.get("options"), list) and len(en["options"]) == len(options)):
-        en = None
-    else:
-        en = {"question": str(en["question"]).strip(),
-              "options": [str(o).strip() for o in en["options"]],
-              "explanation": str(en.get("explanation", "")).strip()}
-    diff = str(q.get("difficulty", "orta")).lower()
+    diff = q.get("difficulty", "orta")
+    diff = diff.lower() if isinstance(diff, str) else "orta"
     if diff not in DIFFICULTIES:
         diff = "orta"
+    checks = q.get("check")
+    checks = [_text(c, "check", "check") for c in checks[:20]] if isinstance(checks, list) else []
     return {
-        "id": str(q.get("id") or ""),
+        "id": _text(q.get("id"), "id", "short", ""),
         "exam": exam,
         "domain": domain,
         "difficulty": diff,
-        "topic": str(q.get("topic", "") or "").strip(),
+        "topic": _text(q.get("topic"), "topic", "topic", ""),
         "question": text,
         "options": options,
         "correct": sorted(correct),
-        "explanation": str(q.get("explanation", "")).strip(),
-        "source": str(q.get("source", "builtin")),
-        "source_url": str(q.get("source_url", "") or ""),
-        "objective": str(q.get("objective", "") or ""),
-        "check": [str(c) for c in q["check"]] if isinstance(q.get("check"), list) else [],
-        "created": q.get("created") or "",
-        "en": en,
+        "explanation": _text(q.get("explanation"), "explanation", "explanation", ""),
+        "source": _text(q.get("source"), "source", "short", "builtin") or "builtin",
+        "source_url": _text(q.get("source_url"), "source_url", "source_url", ""),
+        "objective": _text(q.get("objective"), "objective", "short", ""),
+        "check": checks,
+        "created": _text(q.get("created"), "created", "short", ""),
+        "en": _english(q.get("en"), len(options)),
     }
+
+
+def load_import_file(path) -> list:
+    """Kullanıcının seçtiği soru dosyasını güvenli sınırlarla okur; sorun varsa ValidationError."""
+    try:
+        size = os.path.getsize(path)
+    except OSError as e:
+        raise ValidationError(f"Dosya okunamadı: {e}") from e
+    if size > MAX_IMPORT_BYTES:
+        raise ValidationError(f"Dosya çok büyük ({size // 1024} KB); en fazla {MAX_IMPORT_BYTES // (1024 * 1024)} MB olabilir.")
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+    except OSError as e:
+        raise ValidationError(f"Dosya okunamadı: {e}") from e
+    except RecursionError as e:
+        raise ValidationError("Dosya çok derin iç içe yapı içeriyor.") from e
+    except ValueError as e:  # JSONDecodeError ve UnicodeDecodeError
+        raise ValidationError(f"Geçerli bir UTF-8 JSON dosyası değil: {e}") from e
+    if isinstance(data, dict):
+        data = data.get("questions", [])
+    if not isinstance(data, list):
+        raise ValidationError("Dosya bir soru listesi içermeli.")
+    if len(data) > MAX_IMPORT_QUESTIONS:
+        raise ValidationError(f"Tek seferde en fazla {MAX_IMPORT_QUESTIONS} soru içe aktarılabilir.")
+    return data
 
 
 def localized(q: dict, lang: str) -> dict:
@@ -139,7 +217,8 @@ class QuestionBank:
         try:
             q = validate_question(raw, exam_code)
         except ValidationError as e:
-            self.load_errors.append(f"{raw.get('id', '?')}: {e}")
+            qid = raw.get("id", "?") if isinstance(raw, dict) else "?"
+            self.load_errors.append(f"{str(qid)[:40]}: {e}")
             return None
         if source:
             q["source"] = source
@@ -208,8 +287,23 @@ class Stats:
     def __init__(self, data_dir: Path = DATA_DIR):
         self.path = Path(data_dir) / "stats.json"
         data = _read_json(self.path, {})
-        self.questions: dict = data.get("questions", {})
-        self.sessions: list = data.get("sessions", [])
+        qs = data.get("questions")
+        self.questions: dict = {k: v for k, v in qs.items() if self._valid_entry(v)} if isinstance(qs, dict) else {}
+        ss = data.get("sessions")
+        self.sessions: list = [x for x in ss if self._valid_session(x)] if isinstance(ss, list) else []
+
+    @staticmethod
+    def _valid_entry(v) -> bool:
+        return (isinstance(v, dict)
+                and all(isinstance(v.get(k), int) and not isinstance(v.get(k), bool)
+                        for k in ("seen", "correct", "streak", "last")))
+
+    @staticmethod
+    def _valid_session(x) -> bool:
+        return (isinstance(x, dict) and isinstance(x.get("exam"), str) and isinstance(x.get("date"), str)
+                and isinstance(x.get("mode"), str) and isinstance(x.get("passed"), bool)
+                and all(isinstance(x.get(k), int) and not isinstance(x.get(k), bool)
+                        for k in ("percent", "correct", "total")))
 
     def save(self) -> None:
         _write_json(self.path, {"questions": self.questions, "sessions": self.sessions[-500:]})
@@ -248,7 +342,10 @@ class Settings:
 
     def __init__(self, data_dir: Path = DATA_DIR):
         self.path = Path(data_dir) / "settings.json"
-        self.data = {**self.DEFAULTS, **_read_json(self.path, {})}
+        stored = _read_json(self.path, {})
+        # Yalnızca bilinen ve metin türündeki ayarlar alınır.
+        self.data = {**self.DEFAULTS, **{k: v for k, v in stored.items()
+                                         if k in self.DEFAULTS and isinstance(v, str)}}
 
     def __getitem__(self, k):
         return self.data[k]

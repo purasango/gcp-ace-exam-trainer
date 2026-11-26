@@ -3,13 +3,14 @@ from __future__ import annotations
 
 import json
 import sys
+import time
 import tkinter as tk
 from tkinter import filedialog, font as tkfont, messagebox, ttk
 
 from . import __version__
 from .engine import PASS_PERCENT, QuizSession, build_session
 from .exams import EXAMS
-from .store import QuestionBank, Settings, Stats, localized
+from .store import QuestionBank, Settings, Stats, ValidationError, load_import_file, localized
 
 APP_TITLE = "GCP ACE Exam Trainer — Associate Cloud Engineer Sınav Pratiği"
 ALL = "Tümü"
@@ -318,15 +319,9 @@ class HomeScreen(ttk.Frame):
         if not path:
             return
         try:
-            with open(path, encoding="utf-8") as f:
-                data = json.load(f)
-        except (OSError, json.JSONDecodeError) as e:
-            messagebox.showerror("İçe aktarma", f"Dosya okunamadı:\n{e}")
-            return
-        if isinstance(data, dict):
-            data = data.get("questions", [])
-        if not isinstance(data, list):
-            messagebox.showerror("İçe aktarma", "Dosya bir soru listesi içermeli.")
+            data = load_import_file(path)
+        except ValidationError as e:
+            messagebox.showerror("İçe aktarma", str(e))
             return
         added, errors = self.app.bank.add_user_questions(data, self.exam_code())
         msg = f"{added} soru eklendi."
@@ -650,7 +645,7 @@ class QuizScreen(ttk.Frame):
             return
         rem = self.s.remaining()
         if rem is None:
-            self.lbl_timer["text"] = "⏱ " + fmt_time(int(__import__("time").time() - self.s.started))
+            self.lbl_timer["text"] = "⏱ " + fmt_time(int(time.time() - self.s.started))
         else:
             self.lbl_timer["text"] = "⏳ " + fmt_time(rem)
             self.lbl_timer.configure(foreground=RED if rem < 300 else "")

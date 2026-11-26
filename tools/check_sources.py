@@ -16,19 +16,42 @@ import html
 import json
 import re
 import sys
+import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 ALLOWED = ("https://cloud.google.com/", "https://docs.cloud.google.com/")
+MAX_PAGE_BYTES = 10 * 1024 * 1024
+
+
+def is_allowed(url: str) -> bool:
+    return isinstance(url, str) and url.startswith(ALLOWED)
+
+
+class _AllowlistRedirects(urllib.request.HTTPRedirectHandler):
+    """Yalnızca izin verilen resmi alan adlarına yönlendirmeleri takip eder."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if not is_allowed(newurl):
+            raise urllib.error.URLError(f"izin verilmeyen yönlendirme: {newurl[:200]}")
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+_OPENER = urllib.request.build_opener(_AllowlistRedirects)
 
 
 def page_text(url: str, cache: dict) -> str:
     if url not in cache:
+        if not is_allowed(url):
+            raise ValueError("izin verilmeyen adres")
         req = urllib.request.Request(url, headers={"User-Agent": "gcp-ace-exam-trainer-source-check"})
-        with urllib.request.urlopen(req, timeout=40) as r:
-            raw = r.read().decode("utf-8", "replace")
+        with _OPENER.open(req, timeout=40) as r:
+            body = r.read(MAX_PAGE_BYTES + 1)
+            if len(body) > MAX_PAGE_BYTES:
+                raise ValueError("sayfa çok büyük")
+            raw = body.decode("utf-8", "replace")
         raw = re.sub(r"(?is)<(script|style|noscript)\b.*?</\1>", " ", raw)
         txt = html.unescape(re.sub(r"(?s)<[^>]+>", " ", raw))
         cache[url] = re.sub(r"\s+", " ", txt).lower()
@@ -46,7 +69,7 @@ def main(argv: list[str]) -> int:
     if argv:
         qs = [q for q in qs if q["id"] in argv]
     cache: dict = {}
-    urls = sorted({q.get("source_url", "") for q in qs if q.get("source_url", "").startswith(ALLOWED)})
+    urls = sorted({q["source_url"] for q in qs if is_allowed(q.get("source_url"))})
 
     def fetch(u):
         try:
@@ -62,7 +85,7 @@ def main(argv: list[str]) -> int:
     for q in qs:
         url, checks = q.get("source_url", ""), q.get("check", [])
         problems = []
-        if not url.startswith(ALLOWED):
+        if not is_allowed(url):
             problems.append("resmi kaynak linki yok")
         elif url in errors:
             problems.append(f"sayfa açılamadı: {errors[url]}")
