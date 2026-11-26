@@ -6023,9 +6023,9 @@
   "objective": "4.2",
   "topic": "IAM ve servis hesapları",
   "difficulty": "orta",
-  "question": "Güvenlik ekibi, bir projedeki servis hesaplarına ait kullanıcı tarafından yönetilen anahtarları denetlemek istiyor. İlk adım ne olmalıdır?",
+  "question": "Güvenlik ekibi, bir projedeki her servis hesabının kullanıcı tarafından yönetilen anahtarlarını, oluşturulma ve sona erme zamanlarıyla birlikte görmek istiyor. Ne yapmalıdır?",
   "options": [
-   "'gcloud iam service-accounts list' ile servis hesaplarını listelemek",
+   "Her servis hesabı için 'gcloud iam service-accounts get-iam-policy' çalıştırmak",
    "Servis hesapları için IAM role recommendations'ı incelemek",
    "Her servis hesabı için 'gcloud iam service-accounts keys list' çalıştırmak",
    "'gcloud projects get-iam-policy' ile projedeki rol bağlamalarını incelemek"
@@ -6033,21 +6033,21 @@
   "correct": [
    2
   ],
-  "explanation": "keys list komutu bir servis hesabının anahtarlarını, oluşturulma ve sona erme zamanlarıyla listeler; kullanılmayan veya süresiz anahtarlar tespit edilip silinebilir. Servis hesabı listesi, rol önerileri ve IAM politikası anahtarları göstermez.",
+  "explanation": "keys list komutu bir servis hesabının anahtarlarını, oluşturulma ve sona erme zamanlarıyla listeler; kullanılmayan veya süresiz anahtarlar tespit edilip silinebilir. Servis hesabının get-iam-policy çıktısı o hesabı kimlerin kullanabileceğini gösterir, anahtarlarını değil; rol önerileri ve proje IAM politikası da anahtarları göstermez.",
   "source": "builtin",
   "source_url": "https://docs.cloud.google.com/iam/docs/keys-list-get",
   "check": [
    "keys list"
   ],
   "en": {
-   "question": "The security team wants to audit the user-managed keys of service accounts in a project. What should the first step be?",
+   "question": "The security team wants to see the user-managed keys of each service account in a project, together with their creation and expiry times. What should they do?",
    "options": [
-    "List the service accounts with 'gcloud iam service-accounts list'",
+    "Run 'gcloud iam service-accounts get-iam-policy' for each service account",
     "Review IAM role recommendations for the service accounts",
     "Run 'gcloud iam service-accounts keys list' for each service account",
     "Review the project's role bindings with 'gcloud projects get-iam-policy'"
    ],
-   "explanation": "The keys list command lists a service account's keys with their creation and expiry times; unused or non-expiring keys can then be identified and deleted. The service account list, role recommendations, and the IAM policy don't show keys."
+   "explanation": "The keys list command lists a service account's keys with their creation and expiry times; unused or non-expiring keys can then be identified and deleted. A service account's get-iam-policy output shows who can use the account, not its keys; role recommendations and the project IAM policy don't show keys either."
   }
  },
  {
