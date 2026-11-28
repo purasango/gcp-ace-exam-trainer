@@ -18,6 +18,8 @@ Hazır Türkçe soru bankası, gerçek sınavı taklit eden süreli mod ve ilerl
   Workload Identity Federation vb.).
 - **Türkçe / English / İki dilli**: tüm sorular ve açıklamalar iki dilde. Gerçek sınav İngilizce olduğu için
   sınava yaklaştıkça English modunda çalışmanız önerilir. Herhangi bir soruda `T` tuşuyla dili anında değiştirin.
+- **Arayüz dili TR / EN**: ana ekranın sağ üstündeki `TR | EN` düğmesiyle menüler, düğmeler ve mesajlar
+  Türkçe ya da İngilizce olur. Soru dili ayrı bir ayardır; örneğin arayüz Türkçe, sorular English olabilir.
 - **Pratik modu**: her sorudan sonra anında doğru/yanlış ve açıklama.
 - **Sınav simülasyonu**: gerçek sınav gibi süreli (50 soru / 120 dk), sorular alan ağırlıklarına göre dağıtılır,
   işaretleme (⚑) ve soru listesi ile gezinme.
@@ -49,6 +51,7 @@ Tek gereksinim **Python 3.10+**. [python.org](https://www.python.org/downloads/)
 kurulumda **"Add python.exe to PATH"** seçeneğini işaretleyin.
 
 **Windows:** `start-windows.bat` dosyasına çift tıklayın. Başka kurulum adımı yoktur.
+Masaüstünde simgeli bir kısayol isterseniz `create-desktop-shortcut.bat` dosyasını bir kez çalıştırın.
 
 **macOS / Linux:**
 
@@ -102,6 +105,8 @@ examtrainer/exams.py    Sınav tanımları, alanlar ve ağırlıklar
 examtrainer/store.py    Soru bankası, istatistik ve ayar dosyaları
 examtrainer/engine.py   Soru seçimi, karıştırma, puanlama
 examtrainer/gui.py      Tkinter arayüzü
+examtrainer/i18n.py     Arayüz metinleri (Türkçe / English)
+examtrainer/assets/     Uygulama simgesi
 questions/ace.json      Hazır ACE soru bankası
 tests/                  Birim testleri (python -m unittest discover -s tests)
 tools/check_sources.py  Soruları resmi dokümantasyonla karşılaştırır

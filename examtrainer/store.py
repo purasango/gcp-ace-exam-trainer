@@ -338,7 +338,7 @@ class Stats:
 
 
 class Settings:
-    DEFAULTS = {"last_exam": "ACE", "language": "tr"}  # language: tr | en | bi
+    DEFAULTS = {"last_exam": "ACE", "language": "tr", "ui_lang": "tr"}  # language: tr|en|bi, ui_lang: tr|en
 
     def __init__(self, data_dir: Path = DATA_DIR):
         self.path = Path(data_dir) / "settings.json"

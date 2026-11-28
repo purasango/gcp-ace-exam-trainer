@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 import time
 import tkinter as tk
@@ -9,18 +10,39 @@ from tkinter import filedialog, font as tkfont, messagebox, ttk
 
 from . import __version__
 from .engine import PASS_PERCENT, QuizSession, build_session
+from . import i18n
 from .exams import EXAMS
 from .store import QuestionBank, Settings, Stats, ValidationError, load_import_file, localized
 
-APP_TITLE = "GCP ACE Exam Trainer — Associate Cloud Engineer Sınav Pratiği"
-ALL = "Tümü"
-MODES = {"Pratik (anında geri bildirim)": "pratik", "Sınav simülasyonu (süreli)": "sinav"}
-FOCUS = {"Akıllı karışık (zayıflara öncelik)": "karisik",
-         "Yalnızca yanlış yaptıklarım": "zayif",
-         "Yalnızca hiç görmediklerim": "yeni"}
-SOURCES = {"Tüm sorular": None, "Hazır sorular": ["builtin"], "İçe aktarılanlar": ["ice-aktarim"]}
-SOURCE_LABEL = {"builtin": "Hazır", "ice-aktarim": "İçe aktarım"}
-LANGS = {"Türkçe": "tr", "English": "en", "İki dilli (İngilizce + Türkçe)": "bi"}
+ASSETS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+MODES = ("pratik", "sinav")
+FOCUS = ("karisik", "zayif", "yeni")
+SOURCES = (("src_all", None), ("src_builtin", ["builtin"]), ("src_user", ["ice-aktarim"]))
+QLANGS = ("tr", "en", "bi")
+
+
+class Choice:
+    """Görünen etiketi dile göre değişen, iç değeri sabit kalan açılır liste."""
+
+    def __init__(self, parent, pairs, value=None, **kw):
+        self.pairs = list(pairs)  # [(değer, etiket)]
+        self.var = tk.StringVar()
+        self.cb = ttk.Combobox(parent, textvariable=self.var, state="readonly",
+                               values=[lbl for _, lbl in self.pairs], **kw)
+        self.set(value)
+
+    def get(self):
+        lbl = self.var.get()
+        return next((v for v, l in self.pairs if l == lbl), self.pairs[0][0])
+
+    def set(self, value):
+        self.var.set(next((l for v, l in self.pairs if v == value), self.pairs[0][1]))
+
+    def set_pairs(self, pairs):
+        cur = self.get()
+        self.pairs = list(pairs)
+        self.cb["values"] = [lbl for _, lbl in self.pairs]
+        self.set(cur)
 
 
 def primary_lang(setting: str) -> str:
@@ -28,7 +50,8 @@ def primary_lang(setting: str) -> str:
     return "tr" if setting == "tr" else "en"
 
 
-def insert_question(txt: tk.Text, q: dict, setting: str, order=None, correct=None, sel=frozenset()):
+def insert_question(txt: tk.Text, q: dict, setting: str, ui: str = "tr", order=None, correct=None,
+                    sel=frozenset()):
     """Bir soruyu (gerekirse iki dilde) Text widget'ına yazar."""
     langs = ["tr"] if setting == "tr" else (["en"] if setting == "en" else ["en", "tr"])
     if not q.get("en"):
@@ -42,12 +65,17 @@ def insert_question(txt: tk.Text, q: dict, setting: str, order=None, correct=Non
         txt.insert("end", loc["question"] + "\n", "q")
         for i, orig in enumerate(order):
             tag = "ok" if i in correct else ("bad" if i in sel else "")
-            mark = "  ← sizin cevabınız" if i in sel else ""
+            mark = i18n.t("your_answer", ui) if i in sel else ""
             txt.insert("end", f"{chr(65 + i)}. {loc['options'][orig]}{mark}\n", tag)
         txt.insert("end", "\nAçıklama\n" if lang == "tr" else "\nExplanation\n", "h")
-        txt.insert("end", (loc["explanation"] or "(Açıklama yok)") + "\n")
+        txt.insert("end", (loc["explanation"] or i18n.t("no_expl", ui)) + "\n")
     if q.get("source_url"):
-        txt.insert("end", f"\nKaynak: {q['source_url']}")
+        txt.insert("end", "\n" + i18n.t("source_line", ui, url=q["source_url"]))
+
+
+def source_label(src: str, ui: str) -> str:
+    key = f"srclabel_{src}"
+    return i18n.t(key, ui) if key in i18n.STRINGS else src
 
 
 def make_text(win, app) -> tk.Text:
@@ -72,11 +100,20 @@ def fmt_time(sec: int) -> str:
 
 class App(tk.Tk):
     def __init__(self):
+        if sys.platform == "win32":
+            # Görev çubuğunda Python logosu yerine uygulamanın kendi simgesi görünsün
+            try:
+                import ctypes
+                ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("GCPACEExamTrainer")
+            except Exception:
+                pass
         super().__init__()
-        self.title(APP_TITLE)
+        self.settings = Settings()
+        self.home_state: dict = {}
+        self.title(self.t("app_title"))
+        self._set_icon()
         self.geometry("1100x760")
         self.minsize(880, 600)
-        self.settings = Settings()
         self.bank = QuestionBank()
         self.stats = Stats()
         self._setup_style()
@@ -84,6 +121,27 @@ class App(tk.Tk):
         self.container.pack(fill="both", expand=True)
         self.screen = None
         self.show_home()
+
+    @property
+    def ui(self) -> str:
+        return i18n.norm_lang(self.settings["ui_lang"])
+
+    def t(self, key: str, **kw) -> str:
+        return i18n.t(key, self.ui, **kw)
+
+    def set_ui_lang(self, lang: str):
+        self.settings["ui_lang"] = i18n.norm_lang(lang)
+        self.settings.save()
+        self.title(self.t("app_title"))
+        self.show_home()
+
+    def _set_icon(self):
+        try:
+            imgs = [tk.PhotoImage(file=os.path.join(ASSETS, f"icon-{n}.png")) for n in (256, 48, 32, 16)]
+            self.iconphoto(True, *imgs)
+            self._icons = imgs  # çöp toplayıcı silmesin
+        except (tk.TclError, OSError):
+            pass
 
     def _setup_style(self):
         style = ttk.Style(self)
@@ -103,6 +161,9 @@ class App(tk.Tk):
         style.configure("Muted.TLabel", foreground="#5f6368")
         style.configure("Big.TButton", font=(fam, 12, "bold"), padding=(14, 8))
         style.configure("Treeview", rowheight=26)
+        style.configure("Lang.Toolbutton", font=(fam, 10, "bold"), padding=(8, 4), anchor="center")
+        style.map("Lang.Toolbutton", background=[("selected", "#1a73e8"), ("active", "#d2e3fc")],
+                  foreground=[("selected", "#ffffff")])
 
     def switch(self, frame_cls, *args):
         if self.screen is not None:
@@ -125,6 +186,8 @@ class HomeScreen(ttk.Frame):
     def __init__(self, parent, app: App):
         super().__init__(parent, padding=20)
         self.app = app
+        t, ui = app.t, app.ui
+        st = app.home_state
         exam_code = app.settings["last_exam"] if app.settings["last_exam"] in EXAMS else "ACE"
 
         head = ttk.Frame(self)
@@ -132,11 +195,17 @@ class HomeScreen(ttk.Frame):
         titles = ttk.Frame(head)
         titles.pack(side="left")
         ttk.Label(titles, text="GCP ACE Exam Trainer", style="Title.TLabel").pack(anchor="w")
-        ttk.Label(titles, text=f"Associate Cloud Engineer sınav pratiği • v{__version__}",
-                  style="Muted.TLabel").pack(anchor="w")
-        for txt, cmd in (("İlerlemeyi sıfırla", self.reset_stats), ("JSON içe aktar", self.import_json),
-                         ("Soru bankası", self.open_bank)):
-            ttk.Button(head, text=txt, command=cmd).pack(side="right", padx=4)
+        ttk.Label(titles, text=t("subtitle", v=__version__), style="Muted.TLabel").pack(anchor="w")
+        # arayüz dili: TR | EN
+        sw = ttk.Frame(head)
+        sw.pack(side="right", padx=(12, 0))
+        self.v_ui = tk.StringVar(value=ui)
+        for code, lbl in (("tr", "TR"), ("en", "EN")):
+            ttk.Radiobutton(sw, text=lbl, value=code, variable=self.v_ui, style="Lang.Toolbutton", width=3,
+                            command=self._switch_ui).pack(side="left")
+        for key, cmd in (("btn_reset", self.reset_stats), ("btn_import", self.import_json),
+                         ("btn_bank", self.open_bank)):
+            ttk.Button(head, text=t(key), command=cmd).pack(side="right", padx=4)
 
         body = ttk.Frame(self)
         body.pack(fill="both", expand=True, pady=(16, 0))
@@ -145,20 +214,12 @@ class HomeScreen(ttk.Frame):
         body.rowconfigure(0, weight=1)
 
         # --- Sol: oturum kurulumu
-        left = ttk.LabelFrame(body, text="Yeni oturum", padding=14)
+        left = ttk.LabelFrame(body, text=t("new_session"), padding=14)
         left.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
         left.columnconfigure(1, weight=1)
 
-        self.v_exam = tk.StringVar(value=self._exam_label(exam_code))
-        self.v_mode = tk.StringVar(value=list(MODES)[0])
-        self.v_count = tk.IntVar(value=20)
-        self.v_domain = tk.StringVar(value=ALL)
-        self.v_topic = tk.StringVar(value=ALL)
-        self.v_focus = tk.StringVar(value=list(FOCUS)[0])
-        self.v_source = tk.StringVar(value=list(SOURCES)[0])
-        self.v_timed = tk.BooleanVar(value=False)
-        inv = {v: k for k, v in LANGS.items()}
-        self.v_lang = tk.StringVar(value=inv.get(app.settings["language"], "Türkçe"))
+        self.v_count = tk.IntVar(value=st.get("count", 20))
+        self.v_timed = tk.BooleanVar(value=st.get("timed", False))
 
         r = 0
 
@@ -168,141 +229,161 @@ class HomeScreen(ttk.Frame):
             widget.grid(row=r, column=1, sticky="ew", pady=5)
             r += 1
 
-        self.cb_exam = ttk.Combobox(left, textvariable=self.v_exam, state="readonly",
-                                    values=[self._exam_label(c) for c in EXAMS])
-        self.cb_exam.bind("<<ComboboxSelected>>", lambda e: self.refresh())
-        row("Sınav", self.cb_exam)
-        cb_lang = ttk.Combobox(left, textvariable=self.v_lang, state="readonly", values=list(LANGS))
-        cb_lang.bind("<<ComboboxSelected>>", lambda e: self._save_lang())
-        row("Soru dili", cb_lang)
-        row("Mod", ttk.Combobox(left, textvariable=self.v_mode, state="readonly", values=list(MODES)))
+        self.c_exam = Choice(left, [(c, f"{c} — {e.name}") for c, e in EXAMS.items()], exam_code)
+        self.c_exam.cb.bind("<<ComboboxSelected>>", lambda e: self.refresh())
+        row(t("lbl_exam"), self.c_exam.cb)
+        self.c_lang = Choice(left, [(k, t(f"qlang_{k}")) for k in QLANGS], app.settings["language"])
+        self.c_lang.cb.bind("<<ComboboxSelected>>", lambda e: self._save_lang())
+        row(t("lbl_qlang"), self.c_lang.cb)
+        self.c_mode = Choice(left, [(k, t(f"mode_{k}")) for k in MODES], st.get("mode"))
+        row(t("lbl_mode"), self.c_mode.cb)
         cnt = ttk.Frame(left)
         ttk.Spinbox(cnt, from_=5, to=200, increment=5, textvariable=self.v_count, width=6).pack(side="left")
         for n in (10, 20, 50):
             ttk.Button(cnt, text=str(n), width=4, command=lambda n=n: self.v_count.set(n)).pack(side="left", padx=2)
-        ttk.Checkbutton(cnt, text="Pratikte de süre tut", variable=self.v_timed).pack(side="left", padx=10)
-        row("Soru sayısı", cnt)
-        self.cb_domain = ttk.Combobox(left, textvariable=self.v_domain, state="readonly")
-        row("Alan (domain)", self.cb_domain)
-        self.cb_topic = ttk.Combobox(left, textvariable=self.v_topic, state="readonly")
-        row("Konu", self.cb_topic)
-        row("Odak", ttk.Combobox(left, textvariable=self.v_focus, state="readonly", values=list(FOCUS)))
-        row("Kaynak", ttk.Combobox(left, textvariable=self.v_source, state="readonly", values=list(SOURCES)))
+        ttk.Checkbutton(cnt, text=t("timed_practice"), variable=self.v_timed).pack(side="left", padx=10)
+        row(t("lbl_count"), cnt)
+        self.c_domain = Choice(left, [(None, t("all"))])
+        row(t("lbl_domain"), self.c_domain.cb)
+        self.c_topic = Choice(left, [(None, t("all"))])
+        row(t("lbl_topic"), self.c_topic.cb)
+        self.c_focus = Choice(left, [(k, t(f"focus_{k}")) for k in FOCUS], st.get("focus"))
+        row(t("lbl_focus"), self.c_focus.cb)
+        self.c_source = Choice(left, [(k, t(k)) for k, _ in SOURCES], st.get("source"))
+        row(t("lbl_source"), self.c_source.cb)
 
         self.lbl_bank = ttk.Label(left, style="Muted.TLabel", wraplength=520, justify="left")
         self.lbl_bank.grid(row=r, column=0, columnspan=2, sticky="w", pady=(10, 4))
         r += 1
         btns = ttk.Frame(left)
         btns.grid(row=r, column=0, columnspan=2, sticky="ew", pady=(12, 0))
-        ttk.Button(btns, text="▶  Başla", style="Big.TButton", command=self.start).pack(side="left")
+        ttk.Button(btns, text=t("btn_start"), style="Big.TButton", command=self.start).pack(side="left")
         r += 1
-        tip = ("İpucu: 1-5 tuşlarıyla seçenek seçip Enter ile kontrol edebilir, ← → ile sorular "
-               "arasında gezebilir, T ile o sorunun dilini Türkçe ⇄ English değiştirebilirsiniz. "
-               "Gerçek sınav İngilizce olacağı için sınava yaklaştıkça English modunda çalışmanız önerilir.")
-        ttk.Label(left, text=tip, style="Muted.TLabel", wraplength=520, justify="left").grid(
+        ttk.Label(left, text=t("tip"), style="Muted.TLabel", wraplength=520, justify="left").grid(
             row=r, column=0, columnspan=2, sticky="w", pady=(16, 0))
 
         # --- Sağ: ilerleme
-        right = ttk.LabelFrame(body, text="İlerlemeniz", padding=14)
+        right = ttk.LabelFrame(body, text=t("progress"), padding=14)
         right.grid(row=0, column=1, sticky="nsew")
         self.lbl_overall = ttk.Label(right, font=self.app.f_h2, justify="left")
         self.lbl_overall.pack(anchor="w")
-        ttk.Label(right, text="Alan bazında başarı", style="Muted.TLabel").pack(anchor="w", pady=(12, 2))
+        ttk.Label(right, text=t("by_domain"), style="Muted.TLabel").pack(anchor="w", pady=(12, 2))
         self.dom_frame = ttk.Frame(right)
         self.dom_frame.pack(fill="x")
-        ttk.Label(right, text="Son oturumlar", style="Muted.TLabel").pack(anchor="w", pady=(14, 2))
+        ttk.Label(right, text=t("recent"), style="Muted.TLabel").pack(anchor="w", pady=(14, 2))
         self.tv_hist = ttk.Treeview(right, columns=("t", "m", "s"), show="headings", height=8)
-        for c, t, w in (("t", "Tarih", 130), ("m", "Mod", 70), ("s", "Puan", 90)):
-            self.tv_hist.heading(c, text=t)
+        for c, key, w in (("t", "col_date", 130), ("m", "col_mode", 70), ("s", "col_score", 90)):
+            self.tv_hist.heading(c, text=t(key))
             self.tv_hist.column(c, width=w, anchor="w")
         self.tv_hist.pack(fill="both", expand=True)
 
-        if app.bank.load_errors:
-            messagebox.showwarning("Soru bankası", "Bazı sorular yüklenemedi:\n" +
-                                   "\n".join(app.bank.load_errors[:10]))
-        self.refresh()
+        self.refresh(domain=st.get("domain"), topic=st.get("topic"))
+        if app.bank.load_errors and not st.get("warned"):
+            st["warned"] = True
+            messagebox.showwarning(t("bank_warn_title"), t("bank_warn") + "\n" + "\n".join(
+                i18n.error(e, ui) for e in app.bank.load_errors[:10]))
 
     # yardımcılar
-    @staticmethod
-    def _exam_label(code):
-        e = EXAMS[code]
-        return f"{e.code} — {e.name}"
+    def _remember(self):
+        """Dil değişince ekran yeniden kurulurken seçimler kaybolmasın."""
+        try:
+            count = int(self.v_count.get())
+        except (tk.TclError, ValueError):
+            count = 20
+        self.app.home_state.update(mode=self.c_mode.get(), count=count, timed=self.v_timed.get(),
+                                   domain=self.c_domain.get(), topic=self.c_topic.get(),
+                                   focus=self.c_focus.get(), source=self.c_source.get())
+
+    def _switch_ui(self):
+        if self.v_ui.get() != self.app.ui:
+            self._remember()
+            self._save_lang()
+            self.app.set_ui_lang(self.v_ui.get())
 
     def _save_lang(self):
-        self.app.settings["language"] = LANGS[self.v_lang.get()]
+        self.app.settings["language"] = self.c_lang.get()
         self.app.settings.save()
 
     def exam_code(self):
-        return self.v_exam.get().split(" — ")[0]
+        return self.c_exam.get()
 
-    def refresh(self):
+    def refresh(self, domain=None, topic=None):
+        t, ui = self.app.t, self.app.ui
         code = self.exam_code()
         exam = EXAMS[code]
         self.app.settings["last_exam"] = code
         self.app.settings.save()
-        self.cb_domain["values"] = [ALL] + [f"{k}. {v[0]}" for k, v in exam.domains.items()]
-        if self.v_domain.get() not in self.cb_domain["values"]:
-            self.v_domain.set(ALL)
-        topics = sorted({q["topic"] for q in self.app.bank.for_exam(code) if q["topic"]})
-        self.cb_topic["values"] = [ALL] + topics
-        if self.v_topic.get() not in self.cb_topic["values"]:
-            self.v_topic.set(ALL)
+        self.c_domain.set_pairs([(None, t("all"))] + [(k, f"{k}. {i18n.domain_name(exam, k, ui)}")
+                                                      for k in exam.domains])
+        topics = sorted({q["topic"] for q in self.app.bank.for_exam(code) if q["topic"]},
+                        key=lambda x: i18n.topic_name(x, ui).lower())
+        self.c_topic.set_pairs([(None, t("all"))] + [(x, i18n.topic_name(x, ui)) for x in topics])
+        if domain is not None:
+            self.c_domain.set(domain)
+        if topic is not None:
+            self.c_topic.set(topic)
         c = self.app.bank.count(code)
         qs = self.app.bank.for_exam(code)
         seen = sum(1 for q in qs if self.app.stats.get(q["id"])["seen"])
         weak = len(self.app.stats.weak_ids(q["id"] for q in qs))
         if c["toplam"]:
-            txt = (f"Bankada {c['toplam']} soru var ({c['hazir']} hazır, {c['eklenen']} eklenen). "
-                   f"Gördüğünüz: {seen} • Tekrar etmeniz gereken: {weak}. "
-                   f"Gerçek sınav: ~{exam.question_count} soru / {exam.minutes} dk.")
+            txt = t("bank_info", total=c["toplam"], builtin=c["hazir"], user=c["eklenen"], seen=seen,
+                    weak=weak, qc=exam.question_count, mins=exam.minutes)
         else:
-            txt = f"{exam.code} için henüz soru yok. 'JSON içe aktar' ile soru ekleyebilirsiniz."
+            txt = t("bank_empty", code=exam.code)
         self.lbl_bank["text"] = txt
 
         # ilerleme paneli
+        def pct_text(p):
+            return f"{p}%" if ui == "en" else f"%{p}"
+
         tot = sum(self.app.stats.get(q["id"])["seen"] for q in qs)
         cor = sum(self.app.stats.get(q["id"])["correct"] for q in qs)
-        acc = f"%{round(100 * cor / tot)}" if tot else "—"
-        self.lbl_overall["text"] = f"{tot} cevap • Başarı {acc}"
+        acc = pct_text(round(100 * cor / tot)) if tot else "—"
+        self.lbl_overall["text"] = t("overall", n=tot, acc=acc)
         for w in self.dom_frame.winfo_children():
             w.destroy()
-        for k, (name, _w) in exam.domains.items():
+        for k in exam.domains:
             dq = [q for q in qs if q["domain"] == k]
-            t = sum(self.app.stats.get(q["id"])["seen"] for q in dq)
+            n = sum(self.app.stats.get(q["id"])["seen"] for q in dq)
             cc = sum(self.app.stats.get(q["id"])["correct"] for q in dq)
-            pct = round(100 * cc / t) if t else 0
+            pct = round(100 * cc / n) if n else 0
             fr = ttk.Frame(self.dom_frame)
             fr.pack(fill="x", pady=2)
-            ttk.Label(fr, text=f"{k}. {name}", wraplength=260, justify="left").pack(anchor="w")
+            ttk.Label(fr, text=f"{k}. {i18n.domain_name(exam, k, ui)}", wraplength=260,
+                      justify="left").pack(anchor="w")
             bar = ttk.Frame(fr)
             bar.pack(fill="x")
             pb = ttk.Progressbar(bar, maximum=100, value=pct)
             pb.pack(side="left", fill="x", expand=True)
-            ttk.Label(bar, text=f"%{pct} ({t})" if t else "—", width=10).pack(side="left", padx=4)
+            ttk.Label(bar, text=f"{pct_text(pct)} ({n})" if n else "—", width=10).pack(side="left", padx=4)
         self.tv_hist.delete(*self.tv_hist.get_children())
         for s in reversed([s for s in self.app.stats.sessions if s["exam"] == code][-30:]):
             mark = "✓" if s["passed"] else "✗"
-            self.tv_hist.insert("", "end", values=(s["date"], s["mode"],
-                                                   f"{mark} %{s['percent']} ({s['correct']}/{s['total']})"))
+            mode = t(f"mode_short_{s['mode']}") if s["mode"] in MODES else s["mode"]
+            self.tv_hist.insert("", "end", values=(s["date"], mode,
+                                                   f"{mark} {pct_text(s['percent'])} ({s['correct']}/{s['total']})"))
 
     def start(self):
         self._save_lang()
+        self._remember()
         code = self.exam_code()
-        dom = self.v_domain.get()
-        domains = None if dom == ALL else [int(dom.split(".")[0])]
-        topics = None if self.v_topic.get() == ALL else [self.v_topic.get()]
-        mode = MODES[self.v_mode.get()]
+        dom = self.c_domain.get()
+        domains = None if dom is None else [dom]
+        topic = self.c_topic.get()
+        topics = None if topic is None else [topic]
+        mode = self.c_mode.get()
         try:
             n = max(1, int(self.v_count.get()))
         except (tk.TclError, ValueError):
             n = 20
         try:
             sess = build_session(self.app.bank, self.app.stats, code, n, mode, domains,
-                                 FOCUS[self.v_focus.get()], SOURCES[self.v_source.get()],
+                                 self.c_focus.get(), dict(SOURCES)[self.c_source.get()],
                                  timed=True if self.v_timed.get() or mode == "sinav" else False,
                                  topics=topics)
         except ValueError as e:
-            messagebox.showinfo("Soru yok", str(e))
+            messagebox.showinfo(self.app.t("no_questions"), i18n.error(str(e), self.app.ui))
             return
         self.app.start_session(sess)
 
@@ -310,24 +391,26 @@ class HomeScreen(ttk.Frame):
         BankWindow(self.app, self.exam_code(), on_close=self.refresh)
 
     def reset_stats(self):
-        if messagebox.askyesno("Sıfırla", "Tüm ilerleme ve oturum geçmişi silinsin mi?"):
+        if messagebox.askyesno(self.app.t("reset_title"), self.app.t("reset_ask")):
             self.app.stats.reset()
             self.refresh()
 
     def import_json(self):
-        path = filedialog.askopenfilename(title="Soru dosyası seç", filetypes=[("JSON", "*.json")])
+        t, ui = self.app.t, self.app.ui
+        path = filedialog.askopenfilename(title=t("pick_file"), filetypes=[("JSON", "*.json")])
         if not path:
             return
         try:
             data = load_import_file(path)
         except ValidationError as e:
-            messagebox.showerror("İçe aktarma", str(e))
+            messagebox.showerror(t("import_title"), i18n.error(str(e), ui))
             return
         added, errors = self.app.bank.add_user_questions(data, self.exam_code())
-        msg = f"{added} soru eklendi."
+        msg = t("import_added", n=added)
         if errors:
-            msg += f"\n{len(errors)} soru atlandı:\n" + "\n".join(errors[:12])
-        messagebox.showinfo("İçe aktarma", msg)
+            msg += "\n" + t("import_skipped", n=len(errors)) + "\n" + "\n".join(
+                i18n.error(e, ui) for e in errors[:12])
+        messagebox.showinfo(t("import_title"), msg)
         self.refresh()
 
 
@@ -385,15 +468,16 @@ class QuizScreen(ttk.Frame):
         # alt düğmeler
         bot = ttk.Frame(self)
         bot.pack(fill="x")
-        ttk.Button(bot, text="⟵ Önceki", command=lambda: self.go(-1)).pack(side="left")
-        self.btn_flag = ttk.Button(bot, text="⚑ İşaretle", command=self.toggle_flag)
+        t = app.t
+        ttk.Button(bot, text=t("btn_prev"), command=lambda: self.go(-1)).pack(side="left")
+        self.btn_flag = ttk.Button(bot, text=t("btn_flag"), command=self.toggle_flag)
         self.btn_flag.pack(side="left", padx=6)
-        self.btn_nav = ttk.Button(bot, text="☰ Soru listesi", command=self.open_navigator)
+        self.btn_nav = ttk.Button(bot, text=t("btn_nav"), command=self.open_navigator)
         self.btn_nav.pack(side="left")
         self.btn_lang = ttk.Button(bot, text="🌐 Dil (T)", command=self.toggle_lang)
         self.btn_lang.pack(side="left", padx=6)
-        ttk.Button(bot, text="Bitir", command=self.finish).pack(side="right")
-        self.btn_next = ttk.Button(bot, text="Sonraki ⟶", style="Big.TButton", command=self.primary)
+        ttk.Button(bot, text=t("btn_finish"), command=self.finish).pack(side="right")
+        self.btn_next = ttk.Button(bot, text=t("btn_next"), style="Big.TButton", command=self.primary)
         self.btn_next.pack(side="right", padx=6)
 
         self.vars: list = []
@@ -457,21 +541,23 @@ class QuizScreen(ttk.Frame):
         it = self.s.items[self.idx]
         q = it.q
         n = len(self.s.items)
-        self.lbl_pos["text"] = f"Soru {self.idx + 1} / {n}"
+        t, ui = self.app.t, self.app.ui
+        self.lbl_pos["text"] = t("q_pos", i=self.idx + 1, n=n)
         self.progress["value"] = len(self.s.answers)
-        meta = f"Alan {q['domain']}: {self.exam.domain_name(q['domain'])}"
+        parts = [t("meta_domain", k=q["domain"], name=i18n.domain_name(self.exam, q["domain"], ui))]
         if q.get("topic"):
-            meta += f"  •  Konu: {q['topic']}"
-        meta += f"  •  Zorluk: {q['difficulty']}  •  Kaynak: {SOURCE_LABEL.get(q['source'], q['source'])}"
+            parts.append(t("meta_topic", t=i18n.topic_name(q["topic"], ui)))
+        parts.append(t("meta_diff", d=i18n.difficulty(q["difficulty"], ui)))
+        parts.append(t("meta_source", s=source_label(q["source"], ui)))
         if self.idx in self.s.flagged:
-            meta += "  •  ⚑ işaretli"
-        self.lbl_meta["text"] = meta
+            parts.append(t("meta_flagged"))
+        self.lbl_meta["text"] = "  •  ".join(parts)
         if self.practice:
             done = [i for i in self.checked]
             ok = sum(self.s.is_correct(i) for i in done)
-            self.lbl_score["text"] = f"Doğru: {ok} / {len(done)}"
+            self.lbl_score["text"] = t("score_practice", ok=ok, n=len(done))
         else:
-            self.lbl_score["text"] = f"Cevaplanan: {len(self.s.answers)} / {n} • İşaretli: {len(self.s.flagged)}"
+            self.lbl_score["text"] = t("score_exam", a=len(self.s.answers), n=n, f=len(self.s.flagged))
 
         lang = self.lang
         loc = localized(q, lang)
@@ -521,7 +607,7 @@ class QuizScreen(ttk.Frame):
         self.feedback.pack_forget()
         if locked:
             self.show_feedback()
-        self.btn_flag["text"] = "⚑ İşareti kaldır" if self.idx in self.s.flagged else "⚑ İşaretle"
+        self.btn_flag["text"] = t("btn_unflag") if self.idx in self.s.flagged else t("btn_flag")
         self._update_primary()
         if not keep_scroll:
             self.canvas.yview_moveto(0)
@@ -529,11 +615,11 @@ class QuizScreen(ttk.Frame):
     def _update_primary(self):
         last = self.idx == len(self.s.items) - 1
         if self.practice and self.idx not in self.checked:
-            self.btn_next["text"] = "Kontrol et ✓"
+            self.btn_next["text"] = self.app.t("btn_check")
         elif last:
-            self.btn_next["text"] = "Bitir ⏹"
+            self.btn_next["text"] = self.app.t("btn_finish_last")
         else:
-            self.btn_next["text"] = "Sonraki ⟶"
+            self.btn_next["text"] = self.app.t("btn_next")
 
     def selection(self) -> set[int]:
         it = self.s.items[self.idx]
@@ -552,8 +638,8 @@ class QuizScreen(ttk.Frame):
             self.s.answers.pop(self.idx, None)
         self.progress["value"] = len(self.s.answers)
         if not self.practice:
-            n = len(self.s.items)
-            self.lbl_score["text"] = f"Cevaplanan: {len(self.s.answers)} / {n} • İşaretli: {len(self.s.flagged)}"
+            self.lbl_score["text"] = self.app.t("score_exam", a=len(self.s.answers), n=len(self.s.items),
+                                                f=len(self.s.flagged))
 
     def key_select(self, i):
         it = self.s.items[self.idx]
@@ -576,12 +662,12 @@ class QuizScreen(ttk.Frame):
     def check(self):
         sel = self.selection()
         it = self.s.items[self.idx]
+        t = self.app.t
         if not sel:
-            messagebox.showinfo("Cevap", "Lütfen bir seçenek seçin.")
+            messagebox.showinfo(t("answer_title"), t("answer_pick"))
             return
         if it.multi and len(sel) != len(it.correct):
-            if not messagebox.askyesno("Cevap", f"Bu soru {len(it.correct)} seçenek istiyor; "
-                                                f"siz {len(sel)} seçtiniz. Yine de kontrol edilsin mi?"):
+            if not messagebox.askyesno(t("answer_title"), t("answer_count", need=len(it.correct), got=len(sel))):
                 return
         self.s.answer(self.idx, sel)
         self.s.record(self.idx, self.app.stats)
@@ -598,13 +684,14 @@ class QuizScreen(ttk.Frame):
                 w.configure(bg=RED_BG, disabledforeground=RED)
         ok = self.s.is_correct(self.idx)
         right = ", ".join(chr(65 + i) for i in sorted(it.correct))
-        head = "✓ Doğru!" if ok else f"✗ Yanlış. Doğru cevap: {right}"
+        t = self.app.t
+        head = t("fb_right") if ok else t("fb_wrong", ans=right)
         loc = localized(it.q, self.lang)
-        body = loc["explanation"] or "(Açıklama yok)"
+        body = loc["explanation"] or t("no_expl")
         if self.lang_setting == "bi" and loc["lang"] == "en" and it.q["explanation"]:
             body += "\n\nTR — " + it.q["explanation"]
         if it.q.get("source_url"):
-            body += f"\n\nKaynak: {it.q['source_url']}"
+            body += "\n\n" + t("source_line", url=it.q["source_url"])
         self.feedback.configure(text=f"{head}\n\n{body}", bg=GREEN_BG if ok else RED_BG,
                                 fg="#202124")
         self.feedback.pack(fill="x", pady=(14, 10))
@@ -622,10 +709,9 @@ class QuizScreen(ttk.Frame):
 
     def open_navigator(self):
         win = tk.Toplevel(self)
-        win.title("Soru listesi")
+        win.title(self.app.t("nav_title"))
         win.transient(self.app)
-        ttk.Label(win, text="Bir soruya gitmek için tıklayın.  ● cevaplandı  ⚑ işaretli",
-                  padding=8).pack()
+        ttk.Label(win, text=self.app.t("nav_hint"), padding=8).pack()
         grid = ttk.Frame(win, padding=8)
         grid.pack()
         for i in range(len(self.s.items)):
@@ -650,7 +736,7 @@ class QuizScreen(ttk.Frame):
             self.lbl_timer["text"] = "⏳ " + fmt_time(rem)
             self.lbl_timer.configure(foreground=RED if rem < 300 else "")
             if rem == 0:
-                messagebox.showinfo("Süre doldu", "Süre doldu! Sonuçlar gösteriliyor.")
+                messagebox.showinfo(self.app.t("time_up_title"), self.app.t("time_up"))
                 self.finish(force=True)
                 return
         self.after(1000, self.tick)
@@ -660,10 +746,9 @@ class QuizScreen(ttk.Frame):
             unanswered = len(self.s.items) - len(self.s.answers)
             if self.practice:
                 unanswered = len(self.s.items) - len(self.checked)
-            msg = "Oturumu bitirmek istiyor musunuz?"
-            if unanswered:
-                msg = f"{unanswered} soru cevaplanmadı. Yine de bitirilsin mi?"
-            if not messagebox.askyesno("Bitir", msg):
+            t = self.app.t
+            msg = t("finish_unanswered", n=unanswered) if unanswered else t("finish_ask")
+            if not messagebox.askyesno(t("btn_finish"), msg):
                 return
         if self.practice:
             # pratikte yalnızca kontrol edilen cevaplar sayılır
@@ -678,15 +763,17 @@ class ResultScreen(ttk.Frame):
     def __init__(self, parent, app: App, session: QuizSession, summary: dict):
         super().__init__(parent, padding=20)
         self.app, self.s, self.sum = app, session, summary
+        t, ui = app.t, app.ui
+        exam = EXAMS[session.exam_code]
         ok = summary["passed"]
-        ttk.Label(self, text="Sonuçlar", style="Title.TLabel").pack(anchor="w")
+        ttk.Label(self, text=t("results"), style="Title.TLabel").pack(anchor="w")
         color = GREEN if ok else RED
-        verdict = "GEÇTİNİZ 🎉" if ok else "Hedefin altında"
-        tk.Label(self, text=f"%{summary['percent']}  —  {verdict}", font=(app.f_title[0], 26, "bold"),
+        verdict = t("passed") if ok else t("below")
+        pct = f"{summary['percent']}%" if ui == "en" else f"%{summary['percent']}"
+        tk.Label(self, text=f"{pct}  —  {verdict}", font=(app.f_title[0], 26, "bold"),
                  fg=color, bg=ttk.Style(self).lookup("TFrame", "background")).pack(anchor="w", pady=(6, 0))
-        ttk.Label(self, text=(f"{summary['correct']} / {summary['total']} doğru • "
-                              f"Süre {fmt_time(summary['seconds'])} • Hedef: %{PASS_PERCENT} "
-                              "(Google resmi geçme notunu açıklamaz; %70+ güvenli kabul edilir)"),
+        ttk.Label(self, text=t("result_line", c=summary["correct"], t=summary["total"],
+                               time=fmt_time(summary["seconds"]), p=PASS_PERCENT),
                   style="Muted.TLabel").pack(anchor="w", pady=(2, 12))
 
         body = ttk.Frame(self)
@@ -695,21 +782,26 @@ class ResultScreen(ttk.Frame):
         body.columnconfigure(1, weight=3, uniform="r")
         body.rowconfigure(0, weight=1)
 
-        dom = ttk.LabelFrame(body, text="Alan bazında", padding=10)
+        dom = ttk.LabelFrame(body, text=t("res_domains"), padding=10)
         dom.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
-        for name, (c, t) in summary["domains"].items():
-            pct = round(100 * c / t) if t else 0
-            ttk.Label(dom, text=name, wraplength=320, justify="left").pack(anchor="w", pady=(6, 0))
+        by_name = {v[0]: k for k, v in exam.domains.items()}
+        for name, (c, tot) in summary["domains"].items():
+            pct = round(100 * c / tot) if tot else 0
+            k = by_name.get(name)
+            label = f"{k}. {i18n.domain_name(exam, k, ui)}" if k else name
+            ttk.Label(dom, text=label, wraplength=320, justify="left").pack(anchor="w", pady=(6, 0))
             fr = ttk.Frame(dom)
             fr.pack(fill="x")
             ttk.Progressbar(fr, maximum=100, value=pct).pack(side="left", fill="x", expand=True)
-            ttk.Label(fr, text=f"{c}/{t}  %{pct}", width=11).pack(side="left", padx=4)
+            ttk.Label(fr, text=f"{c}/{tot}  " + (f"{pct}%" if ui == "en" else f"%{pct}"),
+                      width=11).pack(side="left", padx=4)
 
-        lst = ttk.LabelFrame(body, text="Sorular (incelemek için çift tıklayın)", padding=10)
+        lst = ttk.LabelFrame(body, text=t("res_list"), padding=10)
         lst.grid(row=0, column=1, sticky="nsew")
         self.tv = ttk.Treeview(lst, columns=("n", "r", "q"), show="headings")
-        for c, t, w, st in (("n", "#", 40, False), ("r", "Sonuç", 70, False), ("q", "Soru", 500, True)):
-            self.tv.heading(c, text=t)
+        for c, head, w, st in (("n", "#", 40, False), ("r", t("col_result"), 70, False),
+                               ("q", t("col_question"), 500, True)):
+            self.tv.heading(c, text=head)
             self.tv.column(c, width=w, stretch=st, anchor="w")
         sb = ttk.Scrollbar(lst, orient="vertical", command=self.tv.yview)
         self.tv.configure(yscrollcommand=sb.set)
@@ -720,7 +812,7 @@ class ResultScreen(ttk.Frame):
         self.tv.tag_configure("skip", foreground="#80868b")
         for i, it in enumerate(session.items):
             if i not in session.answers:
-                r, tag = "— boş", "skip"
+                r, tag = t("blank"), "skip"
             elif session.is_correct(i):
                 r, tag = "✓", "ok"
             else:
@@ -731,9 +823,9 @@ class ResultScreen(ttk.Frame):
 
         bot = ttk.Frame(self)
         bot.pack(fill="x", pady=(12, 0))
-        ttk.Button(bot, text="⌂ Ana sayfa", style="Big.TButton", command=app.show_home).pack(side="left")
+        ttk.Button(bot, text=t("btn_home"), style="Big.TButton", command=app.show_home).pack(side="left")
         wrong = [i for i in range(len(session.items)) if not session.is_correct(i)]
-        b = ttk.Button(bot, text=f"↻ Yanlış/boş soruları tekrar çöz ({len(wrong)})", style="Big.TButton",
+        b = ttk.Button(bot, text=t("btn_retry", n=len(wrong)), style="Big.TButton",
                        command=lambda: self.retry(wrong))
         b.pack(side="left", padx=10)
         if not wrong:
@@ -761,28 +853,31 @@ class ReviewWindow(tk.Toplevel):
     def __init__(self, app: App, session: QuizSession, idx: int):
         super().__init__(app)
         self.app = app
-        self.title(f"Soru {idx + 1} — inceleme")
+        self.title(app.t("review_title", i=idx + 1))
         self.geometry("820x620")
         it = session.items[idx]
         sel = session.answers.get(idx, set())
         txt = make_text(self, app)
-        insert_question(txt, it.q, app.settings["language"], it.order, it.correct, sel)
+        insert_question(txt, it.q, app.settings["language"], app.ui, it.order, it.correct, sel)
         txt.configure(state="disabled")
         bar = ttk.Frame(self, padding=8)
         bar.pack(fill="x")
-        ttk.Button(bar, text="Kapat", command=self.destroy).pack(side="right")
+        ttk.Button(bar, text=app.t("btn_close"), command=self.destroy).pack(side="right")
 
 
 class QuestionView(tk.Toplevel):
     def __init__(self, parent, app: App, q: dict):
         super().__init__(parent)
-        self.title(q.get("id") or "Soru")
+        ui = app.ui
+        self.title(q.get("id") or app.t("col_question"))
         self.geometry("780x560")
         txt = make_text(self, app)
         exam = EXAMS[q["exam"]]
-        txt.insert("end", f"{exam.code} • Alan {q['domain']}: {exam.domain_name(q['domain'])} • "
-                          f"{q.get('topic', '')} • {q['difficulty']}\n\n")
-        insert_question(txt, q, app.settings["language"])
+        txt.insert("end", app.t("view_meta", code=exam.code, k=q["domain"],
+                                name=i18n.domain_name(exam, q["domain"], ui),
+                                topic=i18n.topic_name(q.get("topic", ""), ui),
+                                diff=i18n.difficulty(q["difficulty"], ui)) + "\n\n")
+        insert_question(txt, q, app.settings["language"], ui)
         txt.configure(state="disabled")
 
 
@@ -791,33 +886,35 @@ class BankWindow(tk.Toplevel):
     def __init__(self, app: App, exam_code: str, on_close=None):
         super().__init__(app)
         self.app, self.on_close = app, on_close
-        self.title("Soru bankası")
+        t = app.t
+        self.title(t("btn_bank"))
         self.geometry("1000x620")
         self.protocol("WM_DELETE_WINDOW", self.close)
         top = ttk.Frame(self, padding=10)
         top.pack(fill="x")
         self.v_exam = tk.StringVar(value=exam_code)
         self.v_search = tk.StringVar()
-        ttk.Label(top, text="Sınav").pack(side="left")
+        ttk.Label(top, text=t("lbl_exam")).pack(side="left")
         cb = ttk.Combobox(top, textvariable=self.v_exam, values=list(EXAMS), state="readonly", width=8)
         cb.pack(side="left", padx=6)
         cb.bind("<<ComboboxSelected>>", lambda e: self.fill())
-        ttk.Label(top, text="Ara").pack(side="left", padx=(12, 0))
+        ttk.Label(top, text=t("lbl_search")).pack(side="left", padx=(12, 0))
         ent = ttk.Entry(top, textvariable=self.v_search, width=40)
         ent.pack(side="left", padx=6)
         self.v_search.trace_add("write", lambda *a: self.fill())
         self.lbl = ttk.Label(top, style="Muted.TLabel")
         self.lbl.pack(side="left", padx=10)
-        ttk.Button(top, text="JSON olarak dışa aktar", command=self.export).pack(side="right")
+        ttk.Button(top, text=t("btn_export"), command=self.export).pack(side="right")
 
         frm = ttk.Frame(self, padding=(10, 0))
         frm.pack(fill="both", expand=True)
-        cols = (("id", "ID", 120, False), ("d", "Alan", 45, False), ("t", "Konu", 190, False),
-                ("z", "Zorluk", 60, False), ("s", "Kaynak", 80, False), ("b", "Başarı", 80, False),
-                ("q", "Soru", 400, True))
+        cols = (("id", t("col_id"), 120, False), ("d", t("col_domain"), 70, False),
+                ("t", t("col_topic"), 190, False), ("z", t("col_diff"), 85, False),
+                ("s", t("col_source"), 80, False), ("b", t("col_success"), 70, False),
+                ("q", t("col_question"), 400, True))
         self.tv = ttk.Treeview(frm, columns=[c[0] for c in cols], show="headings")
-        for c, t, w, st in cols:
-            self.tv.heading(c, text=t)
+        for c, head, w, st in cols:
+            self.tv.heading(c, text=head)
             self.tv.column(c, width=w, stretch=st, anchor="w")
         sb = ttk.Scrollbar(frm, orient="vertical", command=self.tv.yview)
         self.tv.configure(yscrollcommand=sb.set)
@@ -826,9 +923,8 @@ class BankWindow(tk.Toplevel):
         self.tv.bind("<Double-1>", self.view)
         bot = ttk.Frame(self, padding=10)
         bot.pack(fill="x")
-        ttk.Label(bot, text="Çift tıklayarak soruyu görüntüleyin. Yalnızca içe aktarılan sorular silinebilir.",
-                  style="Muted.TLabel").pack(side="left")
-        ttk.Button(bot, text="Seçileni sil", command=self.delete).pack(side="right")
+        ttk.Label(bot, text=t("bank_hint"), style="Muted.TLabel").pack(side="left")
+        ttk.Button(bot, text=t("btn_delete"), command=self.delete).pack(side="right")
         self.fill()
 
     def rows(self):
@@ -846,14 +942,15 @@ class BankWindow(tk.Toplevel):
     def fill(self):
         self.tv.delete(*self.tv.get_children())
         qs = self.rows()
+        ui = self.app.ui
+        qlang = primary_lang(self.app.settings["language"])
         for q in qs:
             s = self.app.stats.get(q["id"])
             b = f"{s['correct']}/{s['seen']}" if s["seen"] else "—"
-            self.tv.insert("", "end", iid=q["id"], values=(q["id"], q["domain"], q.get("topic", ""),
-                                                          q["difficulty"], SOURCE_LABEL.get(q["source"], q["source"]),
-                                                          b, localized(q, primary_lang(
-                                                              self.app.settings["language"]))["question"][:150]))
-        self.lbl["text"] = f"{len(qs)} soru"
+            self.tv.insert("", "end", iid=q["id"], values=(
+                q["id"], q["domain"], i18n.topic_name(q.get("topic", ""), ui), i18n.difficulty(q["difficulty"], ui),
+                source_label(q["source"], ui), b, localized(q, qlang)["question"][:150]))
+        self.lbl["text"] = self.app.t("n_questions", n=len(qs))
 
     def view(self, _e=None):
         sel = self.tv.selection()
@@ -866,20 +963,21 @@ class BankWindow(tk.Toplevel):
             return
         q = self.app.bank.questions[sel[0]]
         if q["source"] == "builtin":
-            messagebox.showinfo("Sil", "Hazır sorular silinemez.", parent=self)
+            messagebox.showinfo(self.app.t("delete_title"), self.app.t("delete_builtin"), parent=self)
             return
-        if messagebox.askyesno("Sil", "Bu soru kalıcı olarak silinsin mi?", parent=self):
+        if messagebox.askyesno(self.app.t("delete_title"), self.app.t("delete_ask"), parent=self):
             self.app.bank.delete_user_question(q["id"])
             self.fill()
 
     def export(self):
         path = filedialog.asksaveasfilename(parent=self, defaultextension=".json",
-                                            initialfile=f"{self.v_exam.get().lower()}_sorular.json",
+                                            initialfile=self.app.t("export_file", code=self.v_exam.get().lower()),
                                             filetypes=[("JSON", "*.json")])
         if path:
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(self.rows(), f, ensure_ascii=False, indent=2)
-            messagebox.showinfo("Dışa aktar", f"{len(self.rows())} soru kaydedildi.", parent=self)
+            messagebox.showinfo(self.app.t("export_title"), self.app.t("export_done", n=len(self.rows())),
+                                parent=self)
 
     def close(self):
         self.destroy()
