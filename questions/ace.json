@@ -10520,70 +10520,69 @@
  {
   "id": "ace-303",
   "exam": "ACE",
-  "domain": 1,
-  "objective": "1.1",
-  "topic": "IAM ve servis hesapları",
+  "domain": 3,
+  "objective": "3.1",
+  "topic": "GKE (Kubernetes)",
   "difficulty": "zor",
-  "question": "Şirketiniz kimlik sağlayıcısı (IdP) olarak Microsoft Entra ID kullanıyor. Çalışanların Google Cloud konsoluna SSO ile girmesi gerekiyor, ancak güvenlik ekibi kullanıcı hesaplarının Cloud Identity'ye kopyalanmasını (senkronizasyon) istemiyor. Ne kullanmalısınız?",
+  "question": "Bir GKE Autopilot kümesine dağıtılan pod'un manifestinde cpu isteği (request) 450m, cpu limiti 400m olarak yazılmış. Pod oluşturulduğunda Autopilot ne yapar?",
   "options": [
-   "Workload Identity Federation ile her çalışan için bir iş yükü kimlik havuzu (workload identity pool) oluşturmak",
-   "Google Cloud Directory Sync (GCDS) ile kullanıcıları her gece Cloud Identity'ye aktarmak ve SAML SSO'yu açmak",
-   "Her çalışana bir servis hesabı açıp anahtarlarını Entra ID'deki uygulama kaydında saklamak",
-   "Workforce Identity Federation"
+   "Pod'u reddeder; Autopilot istekleri limitten büyük olan pod'ları hiçbir koşulda kabul etmez",
+   "İsteği limit değerine indirir; pod requests=400m ve limits=400m ile çalışır",
+   "Değerleri olduğu gibi bırakır; Autopilot yalnızca bellek isteklerini değiştirir",
+   "Limiti isteğe çıkarır; pod requests=450m ve limits=450m ile çalışır"
   ],
   "correct": [
-   3
+   1
   ],
-  "explanation": "Workforce Identity Federation, kimlikleri IdP'den federasyonla alır ve Google Cloud'da kullanıcı hesabı saklamaz; senkronizasyon gerekmez (sync-less). GCDS senkronizasyon yapar; Workload Identity Federation insanlar için değil iş yükleri içindir.",
+  "explanation": "Autopilot'ta istek limitten büyükse Autopilot isteği limit değerine ayarlar (ör. 450m/400m → 400m/400m). İstek belirtilmemişse varsayılan değerler atanır; bursting desteklemeyen kümelerde limitler isteğe eşitlenir.",
   "source": "builtin",
-  "source_url": "https://docs.cloud.google.com/iam/docs/workforce-identity-federation",
+  "source_url": "https://docs.cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests",
   "check": [
-   "workforce identity federation is sync-less"
+   "requests greater than limits autopilot sets requests to the value of limits"
   ],
   "en": {
-   "question": "Your company uses Microsoft Entra ID as its identity provider (IdP). Employees need SSO access to the Google Cloud console, but the security team doesn't want user accounts copied (synchronized) into Cloud Identity. What should you use?",
+   "question": "A Pod deployed to a GKE Autopilot cluster has a manifest with a CPU request of 450m and a CPU limit of 400m. What does Autopilot do when the Pod is created?",
    "options": [
-    "Workload Identity Federation, creating a workload identity pool for each employee",
-    "Google Cloud Directory Sync (GCDS) to import users into Cloud Identity nightly, then enable SAML SSO",
-    "Create a service account for each employee and store its keys in the Entra ID app registration",
-    "Workforce Identity Federation"
+    "It rejects the Pod; Autopilot never accepts Pods whose requests are greater than their limits",
+    "It lowers the request to the limit value; the Pod runs with requests=400m and limits=400m",
+    "It leaves the values as they are; Autopilot only modifies memory requests",
+    "It raises the limit to the request; the Pod runs with requests=450m and limits=450m"
    ],
-   "explanation": "Workforce Identity Federation federates identities from your IdP and doesn't store user accounts in Google Cloud; no synchronization is needed (it's sync-less). GCDS synchronizes accounts; Workload Identity Federation is for workloads, not people."
+   "explanation": "In Autopilot, if requests are greater than limits, Autopilot sets requests to the value of limits (e.g. 450m/400m becomes 400m/400m). If requests aren't set, default values are assigned; in clusters that don't support bursting, limits are set equal to requests."
   }
  },
  {
   "id": "ace-304",
   "exam": "ACE",
-  "domain": 1,
-  "objective": "1.1",
-  "topic": "Compute Engine",
-  "difficulty": "orta",
-  "question": "Bir ML iş yükü için europe-west4-a zonunda belirli bir GPU modelinin sunulup sunulmadığını VM oluşturmadan önce kontrol etmek istiyorsunuz. Hangi komutu kullanırsınız?",
+  "domain": 2,
+  "objective": "2.2",
+  "topic": "Veritabanları",
+  "difficulty": "zor",
+  "question": "İki kümeli (replikasyonlu) bir Bigtable örneğinde, bir kullanıcının profil güncellemesini yazdıktan hemen sonra okuyan uygulama zaman zaman eski veriyi görüyor. Uygulamanın kendi yazdığını her zaman okuyabilmesi (read-your-writes) gerekiyor. Ne yapmalısınız?",
   "options": [
-   "gcloud services list --available --filter=\"name:compute.googleapis.com\"",
-   "gcloud compute zones describe europe-west4-a --format=\"value(status)\"",
-   "gcloud compute regions describe europe-west4 --format=\"value(quotas)\"",
-   "gcloud compute accelerator-types list --filter=\"zone:(europe-west4-a)\""
+   "Uygulamanın app profile'ını single-cluster routing ile yapılandırmak; tüm okuma ve yazmalar aynı kümeye gider",
+   "Replikasyonu kapatmadan her okumadan önce 1 saniye beklemek; Bigtable replikasyonu her zaman 1 saniyenin altındadır",
+   "Kümelerden birini salt okunur moda almak; Bigtable'da bu ayar read-your-writes tutarlılığını etkinleştirir",
+   "App profile'ı multi-cluster routing ile yapılandırmak; bu, en yakın kümeye yönlendirdiği için tutarlılığı her zaman garanti eder"
   ],
   "correct": [
-   3
+   0
   ],
-  "explanation": "accelerator-types list, projede kullanılabilen hızlandırıcı (GPU) türlerini zonlara göre listeler ve --filter=\"zone:(...)\" ile daraltılabilir. zones describe zonun durumunu, regions describe kotaları, services list ise API'leri gösterir.",
+  "explanation": "Bigtable'da read-your-writes tutarlılığı single-cluster routing ile sağlanabilir; çünkü uygulamanın istekleri tek bir kümeye gider. Multi-cluster routing yüksek oranda bu tutarlılığı sağlayabilir ama failover gibi durumlarda garanti etmez. Replikasyon gecikmesi için sabit bir süre garantisi yoktur.",
   "source": "builtin",
-  "source_url": "https://docs.cloud.google.com/sdk/gcloud/reference/compute/accelerator-types/list",
+  "source_url": "https://docs.cloud.google.com/bigtable/docs/replication-overview",
   "check": [
-   "gcloud compute accelerator-types list",
-   "--filter=\"zone:( zone … )\""
+   "you can achieve read-your-writes consistency with single-cluster routing"
   ],
   "en": {
-   "question": "Before creating a VM for an ML workload, you want to check whether a specific GPU model is offered in the europe-west4-a zone. Which command do you use?",
+   "question": "In a replicated Bigtable instance with two clusters, an application that reads a user's profile right after writing an update sometimes sees stale data. The application must always be able to read its own writes (read-your-writes). What should you do?",
    "options": [
-    "gcloud services list --available --filter=\"name:compute.googleapis.com\"",
-    "gcloud compute zones describe europe-west4-a --format=\"value(status)\"",
-    "gcloud compute regions describe europe-west4 --format=\"value(quotas)\"",
-    "gcloud compute accelerator-types list --filter=\"zone:(europe-west4-a)\""
+    "Configure the application's app profile with single-cluster routing; all reads and writes go to the same cluster",
+    "Keep replication and wait 1 second before every read; Bigtable replication always completes in under 1 second",
+    "Put one of the clusters in read-only mode; in Bigtable this setting enables read-your-writes consistency",
+    "Configure the app profile with multi-cluster routing; routing to the nearest cluster always guarantees consistency"
    ],
-   "explanation": "accelerator-types list lists the accelerator (GPU) types available to the project by zone and can be narrowed with --filter=\"zone:(...)\". zones describe shows a zone's status, regions describe shows quotas, and services list shows APIs."
+   "explanation": "In Bigtable, read-your-writes consistency can be achieved with single-cluster routing, because the application's requests go to one cluster. Multi-cluster routing can achieve a high rate of it but doesn't guarantee it, for example during failover. There's no fixed guarantee for replication delay."
   }
  },
  {
@@ -10728,70 +10727,69 @@
  {
   "id": "ace-309",
   "exam": "ACE",
-  "domain": 1,
-  "objective": "1.2",
-  "topic": "Kaynak hiyerarşisi ve faturalandırma",
+  "domain": 2,
+  "objective": "2.3",
+  "topic": "VPC ve ağ",
   "difficulty": "orta",
-  "question": "Finans ekibi, ay sonunda bütçenin aşılacağı tahmin edildiğinde, gerçek harcama henüz bütçeyi aşmadan e-posta uyarısı almak istiyor. Bütçeyi nasıl yapılandırmalısınız?",
+  "question": "Şirket içiyle bağlantı için bir HA VPN ağ geçidi oluşturdunuz. Şirket içi ekip, kendi cihazlarında tanımlamak için Google tarafındaki genel IP adreslerini istiyor. Bu adresler nasıl belirlenir?",
   "options": [
-   "Bütçe tutarını önceki ayın harcamasının yarısına düşürüp yalnızca gerçek maliyet eşiği kullanmak",
-   "Billing export'u etkinleştirip BigQuery'de günlük olarak manuel sorgu çalıştırmak",
-   "Gerçek (actual) yerine tahmini (forecasted) maliyete dayalı bir eşik kuralı eklemek",
-   "Eşik kuralını %100 gerçek maliyet olarak bırakıp uyarıları Pub/Sub yerine e-postaya yönlendirmek"
+   "HA VPN tek bir anycast IP kullanır; iki tünel aynı adrese bağlanır",
+   "Google Cloud, ağ geçidinin iki arayüzü için ayrı havuzlardan otomatik olarak iki harici IP adresi seçer",
+   "Önce iki statik harici IP ayırıp ağ geçidine elle bağlamanız ve forwarding rule'ları oluşturmanız gerekir",
+   "HA VPN genel IP kullanmaz; yalnızca Dedicated Interconnect üzerinden çalışır"
   ],
   "correct": [
-   2
+   1
   ],
-  "explanation": "Bütçe eşik kuralları gerçek veya tahmini maliyete göre tetiklenebilir. Tahmini maliyet eşiği, dönem sonunda bütçenin aşılacağı öngörüldüğünde uyarı gönderir.",
+  "explanation": "HA VPN ağ geçidi oluşturulduğunda Google Cloud, yüksek kullanılabilirlik için her arayüze ayrı bir havuzdan birer harici IP adresini otomatik olarak atar; forwarding rule gerekmez. Classic VPN'de ise harici IP'ler ve forwarding rule'lar elle oluşturulur.",
   "source": "builtin",
-  "source_url": "https://docs.cloud.google.com/billing/docs/how-to/budgets",
+  "source_url": "https://docs.cloud.google.com/network-connectivity/docs/vpn/concepts/overview",
   "check": [
-   "actual costs or forecasted costs exceed a percentage of your budget"
+   "google cloud automatically chooses two external ip addresses, one for each of its interfaces"
   ],
   "en": {
-   "question": "The finance team wants an email alert when the budget is projected to be exceeded by the end of the month, before actual spend crosses it. How should you configure the budget?",
+   "question": "You created an HA VPN gateway to connect to on-premises. The on-premises team asks for the public IP addresses on the Google side to configure their devices. How are these addresses determined?",
    "options": [
-    "Reduce the budget amount to half of last month's spend and use only an actual-cost threshold",
-    "Enable billing export and run a manual query in BigQuery every day",
-    "Add a threshold rule based on forecasted cost instead of actual cost",
-    "Keep the threshold rule at 100% of actual cost and route alerts to email instead of Pub/Sub"
+    "HA VPN uses a single anycast IP; both tunnels connect to the same address",
+    "Google Cloud automatically chooses two external IP addresses, from separate pools, for the gateway's two interfaces",
+    "You must first reserve two static external IPs, attach them to the gateway manually and create forwarding rules",
+    "HA VPN doesn't use public IPs; it only works over Dedicated Interconnect"
    ],
-   "explanation": "Budget threshold rules can trigger on actual or forecasted costs. A forecasted-cost threshold alerts you when spend is projected to exceed the budget by the end of the period."
+   "explanation": "When you create an HA VPN gateway, Google Cloud automatically chooses two external IP addresses, one for each interface, each from a unique address pool to support high availability; no forwarding rules are required. With Classic VPN, you create external IPs and forwarding rules yourself."
   }
  },
  {
   "id": "ace-310",
   "exam": "ACE",
-  "domain": 1,
-  "objective": "1.1",
+  "domain": 3,
+  "objective": "3.4",
   "topic": "Logging ve Monitoring",
   "difficulty": "zor",
-  "question": "Operasyon ekibi, 25 farklı projedeki VM'lerin metriklerini tek bir yerden görmek ve bunlar için uyarı tanımlamak istiyor. Google Cloud Observability'yi nasıl kurmalısınız?",
+  "question": "Hiyerarşik firewall politikanızdaki tüm kurallar için Firewall Rules Logging'i açmak istiyorsunuz, ancak bazı kurallarda işlem başarısız oluyor. Bu kuralların eylemi büyük olasılıkla nedir?",
   "options": [
-   "Tüm projelerin metriklerini bir log sink ile BigQuery'ye aktarıp uyarıları orada zamanlanmış sorgularla oluşturmak",
-   "Tüm VM'leri aynı projeye taşımak; Cloud Monitoring projeler arası metrik görüntüleyemez",
-   "Bir izleme projesini scoping project olarak seçip diğer projeleri onun metrics scope'una eklemek",
-   "Her projede ayrı bir dashboard oluşturup bağlantılarını bir dokümanda toplamak"
+   "deny; reddedilen trafik için kayıt tutulamaz, yalnızca izin verilen bağlantılar kaydedilir",
+   "allow; izin verilen trafik VPC Flow Logs ile kaydedilir, firewall kaydı açılamaz",
+   "apply_security_profile_group; derin paket incelemesi yapan kurallarda kayıt tutma desteklenmez",
+   "goto_next; kayıt tutma yalnızca allow, deny ve apply_security_profile_group kurallarında açılabilir"
   ],
   "correct": [
-   2
+   3
   ],
-  "explanation": "Bir projenin metrics scope'u, o projenin (scoping project) hangi projelerin metriklerini görüntüleyip izleyebileceğini belirler. Diğer projeleri metrics scope'a ekleyerek tek yerden dashboard ve uyarı oluşturabilirsiniz.",
+  "explanation": "Firewall politikası kurallarında kayıt tutma yalnızca allow, deny ve apply_security_profile_group eylemli kurallar için açılabilir; goto_next kurallarında açılamaz, çünkü bu kurallar kararı bir sonraki değerlendirme adımına devreder.",
   "source": "builtin",
-  "source_url": "https://docs.cloud.google.com/monitoring/settings/multiple-projects",
+  "source_url": "https://docs.cloud.google.com/firewall/docs/firewall-policies-rule-details",
   "check": [
-   "metrics scope",
-   "scoping project"
+   "logging cannot be enabled for goto_next rules"
   ],
   "en": {
-   "question": "The operations team wants to view metrics from VMs in 25 different projects in one place and create alerts for them. How should you set up Google Cloud Observability?",
+   "question": "You want to enable Firewall Rules Logging for all rules in your hierarchical firewall policy, but it fails for some rules. What is most likely the action of those rules?",
    "options": [
-    "Export all projects' metrics to BigQuery with a log sink and build the alerting policies from scheduled queries there",
-    "Move all VMs into the same project; Cloud Monitoring can't view metrics across projects",
-    "Choose a monitoring project as the scoping project and add the other projects to its metrics scope",
-    "Create a separate dashboard in each project and collect the links in a document"
+    "deny; denied traffic can't be logged, only allowed connections are recorded",
+    "allow; allowed traffic is recorded by VPC Flow Logs, so firewall logging can't be enabled",
+    "apply_security_profile_group; logging isn't supported on rules that perform deep packet inspection",
+    "goto_next; logging can only be enabled for allow, deny and apply_security_profile_group rules"
    ],
-   "explanation": "A project's metrics scope defines which projects' metrics that (scoping) project can view and monitor. By adding other projects to the metrics scope, you can build dashboards and alerts in one place."
+   "explanation": "In firewall policy rules, logging can only be enabled for rules with the allow, deny or apply_security_profile_group action; it can't be enabled for goto_next rules, because they delegate the decision to the next evaluation step."
   }
  },
  {
@@ -11696,67 +11694,66 @@
   "domain": 2,
   "objective": "2.4",
   "topic": "IaC ve DevOps",
-  "difficulty": "orta",
-  "question": "Ekip Terraform'u birden çok kişiyle kullanıyor ve state dosyası şu an bir geliştiricinin dizüstü bilgisayarında. Google'ın önerdiği şekilde state'i nerede ve nasıl saklamalısınız?",
+  "difficulty": "zor",
+  "question": "Ekip altyapıyı Infrastructure Manager ile Terraform yapılandırmalarından dağıtıyor. Üretimdeki bir dağıtımı güncellemeden önce, değişikliğin hangi kaynakları oluşturacağını, değiştireceğini veya sileceğini görmek istiyorsunuz. Ne yapmalısınız?",
   "options": [
-   "State'i Secret Manager'da saklayıp terraform apply'dan önce elle indirmek",
-   "Object Versioning etkin bir Cloud Storage bucket'ında gcs backend ile",
-   "Her geliştiricinin kendi yerel state dosyasını kullanması ve haftalık birleştirme",
-   "State dosyasını Git deposuna commit edip her değişiklikten önce pull yapmak"
+   "Yapılandırmayı önce ayrı bir test projesine dağıtıp oluşan kaynakları üretimle elle karşılaştırmak",
+   "Infrastructure Manager önizleme desteklemediği için aynı yapılandırmayı Deployment Manager'da --preview ile çalıştırmak",
+   "Dağıtımın güncellemesi için bir preview (önizleme) oluşturup sonuçlarını incelemek",
+   "Güncellemeyi uygulayıp sorun çıkarsa önceki revizyonun state dosyasını elle geri yüklemek"
   ],
   "correct": [
-   1
+   2
   ],
-  "explanation": "Terraform state'i uzak bir backend olarak Cloud Storage'da (gcs backend) saklanır; Google'ın örneğinde bucket'ta dağıtım geçmişini tutmak için Object Versioning açıktır ve eski state sürümlerini silmek için lifecycle yönetimi önerilir.",
+  "explanation": "Infrastructure Manager, değişikliklerin altyapıyı nasıl etkileyeceğini uygulamadan önce görmek için preview dağıtımları sunar (yeni dağıtım, güncelleme veya silme için). Her revizyon için yapılandırma, oluşturulan kaynaklar, loglar ve state dosyası saklanır. Infrastructure Manager uygulamaların kaynaklara dağıtımını yönetmez.",
   "source": "builtin",
-  "source_url": "https://docs.cloud.google.com/docs/terraform/resource-management/store-state",
+  "source_url": "https://docs.cloud.google.com/infrastructure-manager/docs/overview",
   "check": [
-   "object versioning enabled to keep the history of your deployments"
+   "create preview deployments to see how changes affect your infrastructure before applying them"
   ],
   "en": {
-   "question": "The team uses Terraform with several people, and the state file currently lives on one developer's laptop. Where and how should you store the state, as Google recommends?",
+   "question": "The team deploys infrastructure from Terraform configurations with Infrastructure Manager. Before updating a production deployment, you want to see which resources the change will create, modify or delete. What should you do?",
    "options": [
-    "Store the state in Secret Manager and download it manually before terraform apply",
-    "In a Cloud Storage bucket with Object Versioning enabled, using the gcs backend",
-    "Let each developer keep a local state file and merge them weekly",
-    "Commit the state file to the Git repository and pull before every change"
+    "First deploy the configuration to a separate test project and manually compare the resulting resources with production",
+    "Run the same configuration in Deployment Manager with --preview, because Infrastructure Manager doesn't support previews",
+    "Create a preview of the deployment update and review its results",
+    "Apply the update and, if something breaks, manually restore the previous revision's state file"
    ],
-   "explanation": "Terraform state is stored remotely in Cloud Storage (the gcs backend); in Google's example the bucket has Object Versioning enabled to keep the history of deployments, and object lifecycle management is suggested to delete old state versions."
+   "explanation": "Infrastructure Manager lets you create preview deployments to see how changes affect your infrastructure before applying them (for a new deployment, an update or a deletion). For each revision it stores the configuration, the resources created, logs and the state file. Infrastructure Manager doesn't manage deploying applications onto your resources."
   }
  },
  {
   "id": "ace-338",
   "exam": "ACE",
-  "domain": 3,
-  "objective": "3.1",
-  "topic": "Compute Engine",
+  "domain": 4,
+  "objective": "4.1",
+  "topic": "IAM ve servis hesapları",
   "difficulty": "zor",
-  "question": "Bir VM'in kalıcı diskinin her gece 02:00'de otomatik olarak anlık görüntüsünün (snapshot) alınmasını ve 14 gün saklanmasını istiyorsunuz. gcloud ile doğru adımlar nelerdir?",
+  "question": "Bir proje için özel (custom) rol oluşturuyorsunuz ve role resourcemanager.organizations.get iznini de eklemek istiyorsunuz. Konsol bu izin için 'Not applicable for project-level custom roles' uyarısı gösteriyor. Ne yapmalısınız?",
   "options": [
-   "'resource-policies create snapshot-schedule', ardından 'disks add-resource-policies' çalıştırmak",
-   "gcloud compute snapshots create komutuna --schedule=daily --retention=14d bayraklarını eklemek",
-   "Cloud Scheduler ile her gece gcloud compute images create komutunu çalıştırmak; image'lar snapshot'ların yerini alır",
-   "gcloud compute instances set-scheduling ile VM'e günlük snapshot zamanlaması tanımlamak"
+   "İzni projede ayrı bir IAM koşuluyla vermek; koşullu bağlamalarda izin kısıtı uygulanmaz",
+   "Rolün aşamasını (stage) GA yerine ALPHA yapmak; ALPHA rollerde tüm izinler kullanılabilir",
+   "Bu izin yalnızca organizasyon veya klasör düzeyinde kullanılabilir; izni içeren rolü organizasyon düzeyinde özel rol olarak oluşturmak",
+   "Uyarıyı yok sayıp rolü oluşturmak; izin rolde kalır ve proje düzeyinde de çalışır"
   ],
   "correct": [
-   0
+   2
   ],
-  "explanation": "Planlı snapshot'lar bir kaynak politikası (resource policy) olarak oluşturulur: önce 'resource-policies create snapshot-schedule' ile zamanlama ve saklama süresi tanımlanır, sonra 'disks add-resource-policies' ile diske eklenir.",
+  "explanation": "Proje düzeyindeki özel roller, yalnızca organizasyon veya klasör düzeyinde kullanılabilen izinler (ör. resourcemanager.organizations.get) dışında desteklenen her izni içerebilir. Böyle bir izin eklenirse konsol uyarı verir ve izin rolden otomatik çıkarılır; bu izin için organizasyon düzeyinde özel rol gerekir.",
   "source": "builtin",
-  "source_url": "https://docs.cloud.google.com/compute/docs/disks/scheduled-snapshots",
+  "source_url": "https://docs.cloud.google.com/iam/docs/creating-custom-roles",
   "check": [
-   "resource-policies create snapshot-schedule",
-   "add-resource-policies"
+   "a project-level custom role can contain any supported permission except for permissions that can only be used at the organization or folder level"
   ],
   "en": {
-   "question": "You want a snapshot of a VM's persistent disk taken automatically every night at 02:00 and kept for 14 days. What are the correct gcloud steps?",
+   "question": "You're creating a custom role for a project and want to include the resourcemanager.organizations.get permission. The console shows a 'Not applicable for project-level custom roles' warning for it. What should you do?",
    "options": [
-    "Run 'resource-policies create snapshot-schedule', then 'disks add-resource-policies'",
-    "Add the --schedule=daily --retention=14d flags to the gcloud compute snapshots create command",
-    "Run gcloud compute images create every night with Cloud Scheduler; images replace snapshots",
-    "Define a daily snapshot schedule on the VM with gcloud compute instances set-scheduling"
+    "Grant the permission in the project with a separate IAM condition; permission restrictions don't apply to conditional bindings",
+    "Set the role's stage to ALPHA instead of GA; all permissions can be used in ALPHA roles",
+    "This permission can only be used at the organization or folder level; create the role containing it as an organization-level custom role",
+    "Ignore the warning and create the role; the permission stays in the role and also works at the project level"
    ],
-   "explanation": "Scheduled snapshots are created as a resource policy: first define the schedule and retention with 'resource-policies create snapshot-schedule', then attach it to the disk with 'disks add-resource-policies'."
+   "explanation": "Project-level custom roles can contain any supported permission except those that can only be used at the organization or folder level, such as resourcemanager.organizations.get. If you add such a permission, the console warns you and automatically removes it from the role; you need an organization-level custom role for it."
   }
  },
  {
@@ -12104,34 +12101,34 @@
   "id": "ace-349",
   "exam": "ACE",
   "domain": 3,
-  "objective": "3.3",
-  "topic": "VPC ve ağ",
-  "difficulty": "orta",
-  "question": "Bir VM'in geçici (ephemeral) harici IP adresi müşterilerin firewall'larında izin listesine eklenmiş. VM silinse bile bu adresin korunmasını istiyorsunuz. Ne yapmalısınız?",
+  "objective": "3.1",
+  "topic": "GKE (Kubernetes)",
+  "difficulty": "zor",
+  "question": "us-east1'deki bölgesel bir GKE Standard kümesinde bir zon kesintisi yaşandı ve geri geldi. Kesinti sonrası düğümler zonlar arasında dengesiz dağılmış durumda. Hangi ifade doğrudur?",
   "options": [
-   "VM'i durdurmak; durdurulan VM'in geçici IP'si kalıcı olarak saklanır",
-   "Mevcut geçici harici IP adresini statik harici IP adresine yükseltmek (promote)",
-   "VM'e Cloud NAT eklemek; NAT IP'si VM'in harici IP'siyle aynı kalır",
-   "Yeni bir statik IP ayırıp müşterilerden izin listesini güncellemelerini istemek; geçici adresler statik yapılamaz"
+   "GKE hem Standard hem Autopilot kümelerde düğümleri her zaman otomatik olarak yeniden dengeler",
+   "Bölgesel kümelerde düğümler tek zonda tutulduğu için dengesizlik oluşmaz",
+   "Dengeyi sağlamak için kümeyi silip aynı yapılandırmayla yeniden oluşturmak gerekir",
+   "Standard kümelerde düğümleri elle veya cluster autoscaler ile yeniden dengelemeniz gerekir; Autopilot'ta GKE bunu otomatik yapar"
   ],
   "correct": [
-   1
+   3
   ],
-  "explanation": "Mevcut bir geçici harici IP adresi statik harici IP adresine yükseltilebilir; böylece adres kaynak silindikten sonra bile ayrılmış olarak kalır. VM durdurulduğunda geçici IP serbest bırakılabilir.",
+  "explanation": "Bölgesel kümede altyapı kesintisi olduğunda Autopilot iş yükleri çalışmaya devam eder ve GKE düğümleri otomatik olarak yeniden dengeler. Standard kümelerde düğümleri elle veya cluster autoscaler ile yeniden dengelemeniz gerekir.",
   "source": "builtin",
-  "source_url": "https://docs.cloud.google.com/compute/docs/ip-addresses/reserve-static-external-ip-address",
+  "source_url": "https://docs.cloud.google.com/kubernetes-engine/docs/concepts/regional-clusters",
   "check": [
-   "promote existing ephemeral external ip addresses"
+   "if you use standard clusters, you must rebalance nodes manually or by using the cluster autoscaler"
   ],
   "en": {
-   "question": "A VM's ephemeral external IP address has been added to customers' firewall allowlists. You want to keep this address even if the VM is deleted. What should you do?",
+   "question": "A zone outage occurred and recovered in a regional GKE Standard cluster in us-east1. After the outage, nodes are unevenly distributed across zones. Which statement is true?",
    "options": [
-    "Stop the VM; a stopped VM's ephemeral IP is kept permanently",
-    "Promote the existing ephemeral external IP address to a static external IP address",
-    "Add Cloud NAT to the VM; the NAT IP stays the same as the VM's external IP",
-    "Reserve a new static IP and ask customers to update their allowlists; ephemeral addresses can't be made static"
+    "GKE always rebalances nodes automatically in both Standard and Autopilot clusters",
+    "Imbalance can't happen, because regional clusters keep nodes in a single zone",
+    "You must delete the cluster and recreate it with the same configuration to restore balance",
+    "In Standard clusters you must rebalance nodes manually or by using the cluster autoscaler; in Autopilot, GKE does it automatically"
    ],
-   "explanation": "An existing ephemeral external IP address can be promoted to a static external IP address, so the address stays reserved even after the resource is deleted. When a VM is stopped, its ephemeral IP can be released."
+   "explanation": "In a regional cluster, if there's an infrastructure outage, Autopilot workloads keep running and GKE automatically rebalances nodes. In Standard clusters, you must rebalance nodes manually or by using the cluster autoscaler."
   }
  },
  {
@@ -12140,33 +12137,32 @@
   "domain": 3,
   "objective": "3.3",
   "topic": "VPC ve ağ",
-  "difficulty": "orta",
-  "question": "Bir veritabanı VM'inin dahili IP adresinin (10.10.0.50) VM silinip yeniden oluşturulsa bile aynı kalmasını istiyorsunuz. Hangi komutla adresi ayırırsınız?",
+  "difficulty": "zor",
+  "question": "Bir otomasyon betiği, birbirine bağımlı iki statik rota değişikliğini (önce yeni rotayı ekleme, sonra eskisini silme) art arda gönderiyor ve bazen VM'ler kısa süreli bağlantı kesintisi yaşıyor. Google'ın önerisine göre betik nasıl çalışmalı?",
   "options": [
-   "gcloud compute networks subnets update SUBNET --reserve=10.10.0.50",
-   "gcloud compute addresses create db-ip --region=REGION --subnet=SUBNET --addresses=10.10.0.50",
-   "gcloud compute addresses create db-ip --global --addresses=10.10.0.50",
-   "gcloud compute instances update VM --zone=ZONE --internal-ip=static --keep-address"
+   "Yeni rotaya öncelik 0 vermek; öncelik 0 olan rotalar diğer tüm değişikliklerden önce anında uygulanır",
+   "İkinci değişikliği, ilk işlemin durumu DONE olduktan ve ek olarak 30 saniye geçtikten sonra göndermek",
+   "Değişikliklerden önce tüm VM'leri yeniden başlatmak; VM'ler rota tablosunu yalnızca açılışta okur",
+   "İki değişikliği tek bir gcloud komutunda göndermek; Google Cloud rota değişikliklerini her zaman gönderildikleri sırayla uygular"
   ],
   "correct": [
    1
   ],
-  "explanation": "Statik dahili IP adresi bölgesel bir kaynaktır ve bir alt ağdan ayrılır: 'addresses create' komutuna --region, --subnet ve istenen adres için --addresses verilir. --global harici adresler (ör. global yük dengeleyici) içindir.",
+  "explanation": "Rota değişiklikleri herhangi bir sırada işlenebilir ve farklı VM'ler değişikliklerden farklı zamanlarda haberdar olabilir. Birbirine bağımlı değişiklikler sırayla yapılmalı; sonraki değişiklik, öncekinin durumu DONE olduktan ve ek olarak 30 saniye geçtikten sonra gönderilmelidir.",
   "source": "builtin",
-  "source_url": "https://docs.cloud.google.com/compute/docs/ip-addresses/reserve-static-internal-ip-address",
+  "source_url": "https://docs.cloud.google.com/vpc/docs/using-routes",
   "check": [
-   "addresses create",
-   "--subnet"
+   "only after the previous change's status is done and an additional 30 seconds has elapsed"
   ],
   "en": {
-   "question": "You want a database VM's internal IP address (10.10.0.50) to stay the same even if the VM is deleted and recreated. Which command reserves the address?",
+   "question": "An automation script submits two interdependent static route changes back to back (first add the new route, then delete the old one), and VMs sometimes lose connectivity briefly. According to Google's recommendation, how should the script work?",
    "options": [
-    "gcloud compute networks subnets update SUBNET --reserve=10.10.0.50",
-    "gcloud compute addresses create db-ip --region=REGION --subnet=SUBNET --addresses=10.10.0.50",
-    "gcloud compute addresses create db-ip --global --addresses=10.10.0.50",
-    "gcloud compute instances update VM --zone=ZONE --internal-ip=static --keep-address"
+    "Give the new route priority 0; routes with priority 0 are applied immediately, before all other changes",
+    "Submit the second change only after the first operation's status is DONE and an additional 30 seconds have passed",
+    "Restart all VMs before the changes; VMs only read the route table at boot",
+    "Send both changes in a single gcloud command; Google Cloud always applies route changes in the order they're submitted"
    ],
-   "explanation": "A static internal IP address is a regional resource reserved from a subnet: pass --region, --subnet and --addresses for the specific address to 'addresses create'. --global is for external addresses (e.g. a global load balancer)."
+   "explanation": "Route changes can be processed in any order, and different instances might become aware of them at different times. Interdependent changes must be made sequentially, submitting each change only after the previous change's status is DONE and an additional 30 seconds have elapsed."
   }
  },
  {
@@ -12345,32 +12341,32 @@
   "domain": 1,
   "objective": "1.2",
   "topic": "Kaynak hiyerarşisi ve faturalandırma",
-  "difficulty": "orta",
-  "question": "Finans ekibinin faturalandırma hesabındaki maliyet ve ödeme bilgilerini görmesi gerekiyor, ancak projeleri hesaba bağlayıp ayıramamaları ya da hesap ayarlarını değiştirememeleri gerekiyor. Hangi rolü vermelisiniz?",
+  "difficulty": "zor",
+  "question": "Billing export'u 8 aydır bir veri kümesine (A) yapıyordunuz. Güvenlik gereksinimi nedeniyle dışa aktarım ayarlarını yeni bir veri kümesine (B) yönlendirdiniz. Analistler B'de son 8 ayın raporunu görmek istiyor. Ne yapmalısınız?",
   "options": [
-   "Project Billing Manager (roles/billing.projectManager)",
-   "Billing Account Viewer (roles/billing.viewer)",
-   "Billing Account User (roles/billing.user)",
-   "Billing Account Administrator (roles/billing.admin)"
+   "Önceden dışa aktarılan veriler B'ye otomatik taşınmaz; raporlarda A ve B veri kümelerini sorguda birleştirmek (join)",
+   "Hiçbir şey; Cloud Billing geçmiş verileri yeni veri kümesine 5 gün içinde otomatik olarak geri doldurur",
+   "Dışa aktarımı kapatıp açmak; yeniden etkinleştirme son 8 ayı B'ye geriye dönük ekler",
+   "A veri kümesini silmek; Cloud Billing silinen kayıtları otomatik olarak B'ye yeniden yazar"
   ],
   "correct": [
-   1
+   0
   ],
-  "explanation": "Billing Account Viewer, maliyet ve ödeme bilgilerine salt okunur erişim verir ve genellikle finans ekiplerine verilir; projeleri bağlama/ayırma veya hesabı yönetme izni vermez. Billing Account User projeleri hesaba bağlamaya izin verir.",
+  "explanation": "Dışa aktarım ayarları yeni bir veri kümesine yönlendirildiğinde önceden dışa aktarılan veriler yeni konuma otomatik olarak geri doldurulmaz; geçmişi dahil etmek için yeni veri kümesini öncekiyle elle birleştirmeniz gerekir. Silinen dışa aktarım tabloları da geri doldurulamaz.",
   "source": "builtin",
-  "source_url": "https://docs.cloud.google.com/billing/docs/how-to/billing-access",
+  "source_url": "https://docs.cloud.google.com/billing/docs/how-to/export-data-bigquery-setup",
   "check": [
-   "billing account viewer access is usually granted to finance teams"
+   "previously exported billing data isn't backfilled automatically to the new storage location"
   ],
   "en": {
-   "question": "The finance team needs to see cost and payment information on the billing account, but must not be able to link or unlink projects or change the account's settings. Which role should you grant?",
+   "question": "You've been exporting billing data to dataset A for 8 months. Due to a security requirement, you pointed the export settings to a new dataset B. Analysts want a report of the last 8 months in B. What should you do?",
    "options": [
-    "Project Billing Manager (roles/billing.projectManager)",
-    "Billing Account Viewer (roles/billing.viewer)",
-    "Billing Account User (roles/billing.user)",
-    "Billing Account Administrator (roles/billing.admin)"
+    "Previously exported data isn't moved to B automatically; join datasets A and B in the report queries",
+    "Nothing; Cloud Billing automatically backfills historical data into the new dataset within 5 days",
+    "Disable and re-enable the export; re-enabling adds the last 8 months to B retroactively",
+    "Delete dataset A; Cloud Billing automatically rewrites the deleted records into B"
    ],
-   "explanation": "Billing Account Viewer gives read access to cost and payment information and is usually granted to finance teams; it doesn't confer the right to link or unlink projects or manage the account. Billing Account User allows linking projects to the account."
+   "explanation": "When you switch export settings to a new dataset, previously exported billing data isn't backfilled automatically to the new storage location; to include it, you must manually join the new dataset with the previous one. Deleted export tables can't be backfilled either."
   }
  },
  {
