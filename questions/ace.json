@@ -10445,5 +10445,2068 @@
    ],
    "explanation": "A user with actAs can attach the service account to resources they run (VMs, Cloud Run, etc.) and thereby indirectly use the service account's permissions (an indirect privilege gain). So the role should be granted on the specific service account rather than the project."
   }
+ },
+ {
+  "id": "ace-301",
+  "exam": "ACE",
+  "domain": 1,
+  "objective": "1.1",
+  "topic": "IAM ve servis hesapları",
+  "difficulty": "zor",
+  "question": "Organizasyon düzeyinde, 'contractors' grubunun compute.instances.delete iznini engelleyen bir IAM deny politikası var. Bir yüklenici, çalıştığı projede Owner rolü aldı. Bu kişi o projedeki VM'leri silebilir mi?",
+  "options": [
+   "Evet; projede verilen rol daha özel olduğu için organizasyon düzeyindeki deny politikasını geçersiz kılar",
+   "Evet; Owner gibi temel (basic) roller deny politikalarından muaf tutulur ve her zaman tam yetki verir",
+   "Hayır; IAM önce ilgili deny politikalarını, sonra allow politikalarını değerlendirir, bu yüzden Owner rolü engeli aşamaz",
+   "Yalnızca deny politikası doğrudan projeye eklenmişse engellenir; organizasyondan miras alınan deny politikası uygulanmaz"
+  ],
+  "correct": [
+   2
+  ],
+  "explanation": "IAM, bir isteği değerlendirirken önce ilgili deny politikalarını kontrol eder; bir deny kuralı izni engelliyorsa kişinin hangi rolleri aldığı önemli değildir. Deny politikaları da hiyerarşide miras alınır.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/iam/docs/deny-overview",
+  "check": [
+   "checks relevant deny policies before checking relevant allow policies"
+  ],
+  "en": {
+   "question": "An organization-level IAM deny policy denies the compute.instances.delete permission to the 'contractors' group. A contractor has been granted the Owner role on the project they work in. Can this person delete VMs in that project?",
+   "options": [
+    "Yes; the role granted on the project is more specific, so it overrides the organization-level deny policy",
+    "Yes; basic roles such as Owner are exempt from deny policies and always grant full access",
+    "No; IAM checks relevant deny policies before allow policies, so the Owner role can't override the denial",
+    "Only if the deny policy is attached directly to the project; deny policies inherited from the organization don't apply"
+   ],
+   "explanation": "When evaluating a request, IAM checks relevant deny policies first; if a deny rule blocks the permission, it doesn't matter which roles the principal has. Deny policies are also inherited down the hierarchy."
+  }
+ },
+ {
+  "id": "ace-302",
+  "exam": "ACE",
+  "domain": 1,
+  "objective": "1.1",
+  "topic": "Kaynak hiyerarşisi ve faturalandırma",
+  "difficulty": "zor",
+  "question": "Yeni bir özel (custom) organizasyon politikası kısıtlaması yazdınız. Uygulamaya almadan önce, mevcut iş akışlarından hangilerinin bu politikayı ihlal edeceğini kimseyi engellemeden görmek istiyorsunuz. Dry-run modundaki organizasyon politikaları için hangi İKİ ifade doğrudur? (İki seçenek seçin.)",
+  "options": [
+   "Dry-run politikası eklemek için önce mevcut zorunlu politikayı silmek gerekir",
+   "Dry-run yalnızca compute.vmExternalIpAccess gibi eski tip boolean kısıtlamalarla kullanılabilir",
+   "İhlal eden işlemler reddedilmez",
+   "Dry-run politikası 30 gün sonra otomatik olarak zorunlu (enforced) hale gelir",
+   "İhlaller denetim kayıtlarına (audit logs) yazılır"
+  ],
+  "correct": [
+   2,
+   4
+  ],
+  "explanation": "Dry-run modundaki bir organizasyon politikası diğer politikalar gibi oluşturulur; ihlaller denetim kayıtlarına yazılır ama işlemler engellenmez. Dry-run; özel kısıtlamalar, yönetilen (managed) kısıtlamalar ve yalnızca belirli eski kısıtlamalarla kullanılabilir. Otomatik olarak zorunlu hale gelmez.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/resource-manager/docs/organization-policy/dry-run-policy",
+  "check": [
+   "violations of the policy are audit logged, but the violating actions aren't denied"
+  ],
+  "en": {
+   "question": "You wrote a new custom organization policy constraint. Before enforcing it, you want to see which existing workflows would violate it without blocking anyone. Which TWO statements about organization policies in dry-run mode are true? (Choose two.)",
+   "options": [
+    "You must delete the existing enforced policy before adding a dry-run policy",
+    "Dry-run can only be used with legacy boolean constraints such as compute.vmExternalIpAccess",
+    "Violating actions aren't denied",
+    "A dry-run policy automatically becomes enforced after 30 days",
+    "Violations are recorded in audit logs"
+   ],
+   "explanation": "An organization policy in dry-run mode is created like other policies; violations are audit logged, but the violating actions aren't denied. Dry-run is available for custom constraints, managed constraints and only certain legacy constraints. It doesn't become enforced automatically."
+  }
+ },
+ {
+  "id": "ace-303",
+  "exam": "ACE",
+  "domain": 1,
+  "objective": "1.1",
+  "topic": "IAM ve servis hesapları",
+  "difficulty": "zor",
+  "question": "Şirketiniz kimlik sağlayıcısı (IdP) olarak Microsoft Entra ID kullanıyor. Çalışanların Google Cloud konsoluna SSO ile girmesi gerekiyor, ancak güvenlik ekibi kullanıcı hesaplarının Cloud Identity'ye kopyalanmasını (senkronizasyon) istemiyor. Ne kullanmalısınız?",
+  "options": [
+   "Workload Identity Federation ile her çalışan için bir iş yükü kimlik havuzu (workload identity pool) oluşturmak",
+   "Google Cloud Directory Sync (GCDS) ile kullanıcıları her gece Cloud Identity'ye aktarmak ve SAML SSO'yu açmak",
+   "Her çalışana bir servis hesabı açıp anahtarlarını Entra ID'deki uygulama kaydında saklamak",
+   "Workforce Identity Federation"
+  ],
+  "correct": [
+   3
+  ],
+  "explanation": "Workforce Identity Federation, kimlikleri IdP'den federasyonla alır ve Google Cloud'da kullanıcı hesabı saklamaz; senkronizasyon gerekmez (sync-less). GCDS senkronizasyon yapar; Workload Identity Federation insanlar için değil iş yükleri içindir.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/iam/docs/workforce-identity-federation",
+  "check": [
+   "workforce identity federation is sync-less"
+  ],
+  "en": {
+   "question": "Your company uses Microsoft Entra ID as its identity provider (IdP). Employees need SSO access to the Google Cloud console, but the security team doesn't want user accounts copied (synchronized) into Cloud Identity. What should you use?",
+   "options": [
+    "Workload Identity Federation, creating a workload identity pool for each employee",
+    "Google Cloud Directory Sync (GCDS) to import users into Cloud Identity nightly, then enable SAML SSO",
+    "Create a service account for each employee and store its keys in the Entra ID app registration",
+    "Workforce Identity Federation"
+   ],
+   "explanation": "Workforce Identity Federation federates identities from your IdP and doesn't store user accounts in Google Cloud; no synchronization is needed (it's sync-less). GCDS synchronizes accounts; Workload Identity Federation is for workloads, not people."
+  }
+ },
+ {
+  "id": "ace-304",
+  "exam": "ACE",
+  "domain": 1,
+  "objective": "1.1",
+  "topic": "Compute Engine",
+  "difficulty": "orta",
+  "question": "Bir ML iş yükü için europe-west4-a zonunda belirli bir GPU modelinin sunulup sunulmadığını VM oluşturmadan önce kontrol etmek istiyorsunuz. Hangi komutu kullanırsınız?",
+  "options": [
+   "gcloud services list --available --filter=\"name:compute.googleapis.com\"",
+   "gcloud compute zones describe europe-west4-a --format=\"value(status)\"",
+   "gcloud compute regions describe europe-west4 --format=\"value(quotas)\"",
+   "gcloud compute accelerator-types list --filter=\"zone:(europe-west4-a)\""
+  ],
+  "correct": [
+   3
+  ],
+  "explanation": "accelerator-types list, projede kullanılabilen hızlandırıcı (GPU) türlerini zonlara göre listeler ve --filter=\"zone:(...)\" ile daraltılabilir. zones describe zonun durumunu, regions describe kotaları, services list ise API'leri gösterir.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/sdk/gcloud/reference/compute/accelerator-types/list",
+  "check": [
+   "gcloud compute accelerator-types list",
+   "--filter=\"zone:( zone … )\""
+  ],
+  "en": {
+   "question": "Before creating a VM for an ML workload, you want to check whether a specific GPU model is offered in the europe-west4-a zone. Which command do you use?",
+   "options": [
+    "gcloud services list --available --filter=\"name:compute.googleapis.com\"",
+    "gcloud compute zones describe europe-west4-a --format=\"value(status)\"",
+    "gcloud compute regions describe europe-west4 --format=\"value(quotas)\"",
+    "gcloud compute accelerator-types list --filter=\"zone:(europe-west4-a)\""
+   ],
+   "explanation": "accelerator-types list lists the accelerator (GPU) types available to the project by zone and can be narrowed with --filter=\"zone:(...)\". zones describe shows a zone's status, regions describe shows quotas, and services list shows APIs."
+  }
+ },
+ {
+  "id": "ace-305",
+  "exam": "ACE",
+  "domain": 1,
+  "objective": "1.1",
+  "topic": "Kaynak hiyerarşisi ve faturalandırma",
+  "difficulty": "zor",
+  "question": "Projenizde quota adjuster (kota ayarlayıcı) etkin. Kullanım bir kotanın sınırına yaklaştığında ne olur ve hangi ifade doğrudur?",
+  "options": [
+   "Yalnızca artış talebi gönderir, kotayı hiçbir zaman düşürmez",
+   "Tüm kotalar için kullanılabilir ve geçmiş kullanım verisine bakmadan talepleri anında onaylar",
+   "Etkinleştirildiğinde projede artık manuel kota artışı talebinde bulunulamaz",
+   "Kullanım azaldığında kotayı otomatik olarak düşürerek maliyeti azaltır; artış için ise her zaman manuel talep gerekir"
+  ],
+  "correct": [
+   0
+  ],
+  "explanation": "Quota adjuster yalnızca kota artış talepleri gönderir, kotayı düşürmeye çalışmaz. Manuel kota sınırı olan kotalar için talep göndermez, yalnızca bazı kotalarda kullanılabilir ve yeterli kullanım geçmişi ister. Manuel artış talebi her zaman yapılabilir.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/docs/quotas/quota-adjuster",
+  "check": [
+   "only submits quota adjustment requests to increase the value of a quota",
+   "doesn't attempt to lower the value"
+  ],
+  "en": {
+   "question": "The quota adjuster is enabled in your project. What happens as usage approaches a quota's limit, and which statement is true?",
+   "options": [
+    "It only submits increase requests and never lowers a quota",
+    "It's available for all quotas and approves requests instantly without looking at historical usage",
+    "Once enabled, you can no longer manually request quota increases in that project",
+    "It automatically lowers quotas when usage drops to save cost, while increases still require a manual request"
+   ],
+   "explanation": "The quota adjuster only submits requests to increase quota values and doesn't try to lower them. It doesn't submit requests for quotas with a manual quota cap, it's only available for some quotas and needs enough historical usage data. You can still request increases manually at any time."
+  }
+ },
+ {
+  "id": "ace-306",
+  "exam": "ACE",
+  "domain": 1,
+  "objective": "1.1",
+  "topic": "Kaynak hiyerarşisi ve faturalandırma",
+  "difficulty": "zor",
+  "question": "Bir güvenlik incelemesinde, bir firewall kuralının 3 hafta önceki yapılandırmasını görmeniz gerekiyor. Kural o tarihten beri birkaç kez değiştirildi. En uygun yöntem nedir?",
+  "options": [
+   "Cloud Asset Inventory ile geçmişi sorgulamak; geçmiş yalnızca 7 gün tutulduğu için 3 hafta öncesini önce BigQuery'ye aktarmış olmanız gerekir",
+   "Cloud Asset Inventory ile kaynağın varlık geçmişini (asset history) sorgulamak; oluşturma, güncelleme ve silme geçmişi 35 güne kadar tutulur",
+   "VPC Flow Logs kayıtlarını incelemek; her akış kaydı ilgili firewall kuralının o anki tam yapılandırmasını içerir",
+   "Kuralı silip yeniden oluşturmak; Compute Engine silinen kuralın eski sürümünü otomatik olarak geri yükler"
+  ],
+  "correct": [
+   1
+  ],
+  "explanation": "Cloud Asset Inventory, varlıkların oluşturma, güncelleme ve silme geçmişini 35 güne kadar tutar ve belirli bir zamandaki durumu sorgulamanızı sağlar. Daha uzun saklama için düzenli export gerekir. Flow Logs trafik kayıtlarıdır, kural yapılandırmasını içermez.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/asset-inventory/docs/overview",
+  "check": [
+   "history for assets is kept for up to 35 days"
+  ],
+  "en": {
+   "question": "During a security review, you need to see the configuration a firewall rule had 3 weeks ago. The rule has been changed several times since then. What is the best approach?",
+   "options": [
+    "Query history with Cloud Asset Inventory; because history is kept for only 7 days, you'd need to have exported it to BigQuery already",
+    "Query the resource's asset history with Cloud Asset Inventory; create, update and delete history is kept for up to 35 days",
+    "Inspect VPC Flow Logs; each flow record contains the full configuration of the matching firewall rule at that time",
+    "Delete and recreate the rule; Compute Engine automatically restores the previous version of a deleted rule"
+   ],
+   "explanation": "Cloud Asset Inventory keeps create, update and delete history for assets for up to 35 days and lets you query an asset's state at a point in time. For longer retention you need regular exports. Flow Logs record traffic, not rule configuration."
+  }
+ },
+ {
+  "id": "ace-307",
+  "exam": "ACE",
+  "domain": 1,
+  "objective": "1.2",
+  "topic": "Kaynak hiyerarşisi ve faturalandırma",
+  "difficulty": "zor",
+  "question": "Bir sandbox projesinde Compute Engine VM'leri ve Cloud SQL çalışıyor. Aylık bütçe aşıldığında projedeki tüm harcamanın otomatik olarak durdurulmasını istiyorsunuz ve kaynakların silinebileceğini kabul ediyorsunuz. Ne yapmalısınız?",
+  "options": [
+   "Projedeki Compute Engine kotasını sıfıra çekmek; bu Cloud SQL dahil tüm hizmetlerde yeni maliyet oluşmasını engeller",
+   "Bütçede eşik kuralı olarak %100 tanımlamak; eşik aşıldığında alerts-only bütçe projedeki tüm kaynakları otomatik olarak durdurur ve yeni maliyet oluşmaz",
+   "Faturalandırma hesabında bir harcama limiti (spend cap) tanımlamak; tüm Compute Engine ve Cloud SQL kaynakları bu limiti destekler",
+   "Bütçe bildirimlerini bir Pub/Sub konusuna göndermek ve bu konuyla tetiklenen bir Cloud Run function ile projede faturalandırmayı programatik olarak devre dışı bırakmak"
+  ],
+  "correct": [
+   3
+  ],
+  "explanation": "Alerts-only bütçeler harcamayı otomatik olarak sınırlamaz. Programatik bütçe bildirimleri Pub/Sub'a gönderilebilir ve bir Cloud Run function ile projede Cloud Billing devre dışı bırakılabilir; bu, kaynakların durmasına ve silinebilmesine yol açabilir. Spend cap yalnızca uygun hizmetleri kapsar.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/billing/docs/how-to/disable-billing-with-notifications",
+  "check": [
+   "disable billing",
+   "pub/sub",
+   "cloud run function"
+  ],
+  "en": {
+   "question": "A sandbox project runs Compute Engine VMs and Cloud SQL. You want all spending in the project to stop automatically when the monthly budget is exceeded, and you accept that resources might be deleted. What should you do?",
+   "options": [
+    "Set the project's Compute Engine quota to zero; this prevents new costs in all services, including Cloud SQL",
+    "Set a 100% threshold rule on the budget; an alerts-only budget then automatically stops every resource in the project once it's crossed",
+    "Define a spend cap on the billing account; all Compute Engine and Cloud SQL resources support this limit",
+    "Send budget notifications to a Pub/Sub topic and use a Cloud Run function triggered by it to programmatically disable billing on the project"
+   ],
+   "explanation": "Alerts-only budgets don't automatically cap spending. Programmatic budget notifications can be sent to Pub/Sub and a Cloud Run function can disable Cloud Billing on the project; this can cause resources to stop and possibly be deleted. Spend caps only cover eligible services."
+  }
+ },
+ {
+  "id": "ace-308",
+  "exam": "ACE",
+  "domain": 1,
+  "objective": "1.2",
+  "topic": "Kaynak hiyerarşisi ve faturalandırma",
+  "difficulty": "zor",
+  "question": "Ayın ortasında Cloud Billing'in BigQuery'ye standart kullanım maliyeti dışa aktarımını ilk kez etkinleştirdiniz. Veri kümesi (dataset) europe-west3 bölgesinde. Analistler geçen ayın maliyetlerini de görmek istiyor. Ne olur?",
+  "options": [
+   "Bölgesel konumdaki bir veri kümesine geçmiş veri eklenmez",
+   "Son 12 ayın verisi geriye dönük eklenir, ancak bu işlem 30 güne kadar sürebilir",
+   "Geçen ayın başından itibaren tüm veriler geriye dönük eklenir; bölge seçimi bunu etkilemez",
+   "Geçmiş veri yalnızca ayrıntılı (detailed) dışa aktarımda eklenir; standart dışa aktarımda hiçbir zaman eklenmez"
+  ],
+  "correct": [
+   0
+  ],
+  "explanation": "Veri kümesi çoklu bölgede (EU veya US) ise ilk etkinleştirmede mevcut ve önceki ayın verisi geriye dönük eklenir (5 güne kadar sürebilir). Bölgesel konumdaki veri kümelerinde ise yalnızca etkinleştirme tarihinden sonraki maliyetler görünür.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/billing/docs/how-to/export-data-bigquery-setup",
+  "check": [
+   "google cloud billing data is not added retroactively for non-multi-region dataset locations"
+  ],
+  "en": {
+   "question": "In the middle of the month you enabled Cloud Billing standard usage cost export to BigQuery for the first time. The dataset is in the europe-west3 region. Analysts also want to see last month's costs. What happens?",
+   "options": [
+    "No historical data is added for a dataset in a regional location",
+    "The last 12 months of data are added retroactively, but this can take up to 30 days",
+    "All data from the start of the previous month is added retroactively; the region choice doesn't affect this",
+    "Historical data is only added for detailed export; it's never added for standard export"
+   ],
+   "explanation": "If the dataset is in a multi-region (EU or US), the current and previous month's data are added retroactively on first enablement (this can take up to five days). For datasets in a regional location, you only see costs incurred from the date you enabled the export."
+  }
+ },
+ {
+  "id": "ace-309",
+  "exam": "ACE",
+  "domain": 1,
+  "objective": "1.2",
+  "topic": "Kaynak hiyerarşisi ve faturalandırma",
+  "difficulty": "orta",
+  "question": "Finans ekibi, ay sonunda bütçenin aşılacağı tahmin edildiğinde, gerçek harcama henüz bütçeyi aşmadan e-posta uyarısı almak istiyor. Bütçeyi nasıl yapılandırmalısınız?",
+  "options": [
+   "Bütçe tutarını önceki ayın harcamasının yarısına düşürüp yalnızca gerçek maliyet eşiği kullanmak",
+   "Billing export'u etkinleştirip BigQuery'de günlük olarak manuel sorgu çalıştırmak",
+   "Gerçek (actual) yerine tahmini (forecasted) maliyete dayalı bir eşik kuralı eklemek",
+   "Eşik kuralını %100 gerçek maliyet olarak bırakıp uyarıları Pub/Sub yerine e-postaya yönlendirmek"
+  ],
+  "correct": [
+   2
+  ],
+  "explanation": "Bütçe eşik kuralları gerçek veya tahmini maliyete göre tetiklenebilir. Tahmini maliyet eşiği, dönem sonunda bütçenin aşılacağı öngörüldüğünde uyarı gönderir.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/billing/docs/how-to/budgets",
+  "check": [
+   "actual costs or forecasted costs exceed a percentage of your budget"
+  ],
+  "en": {
+   "question": "The finance team wants an email alert when the budget is projected to be exceeded by the end of the month, before actual spend crosses it. How should you configure the budget?",
+   "options": [
+    "Reduce the budget amount to half of last month's spend and use only an actual-cost threshold",
+    "Enable billing export and run a manual query in BigQuery every day",
+    "Add a threshold rule based on forecasted cost instead of actual cost",
+    "Keep the threshold rule at 100% of actual cost and route alerts to email instead of Pub/Sub"
+   ],
+   "explanation": "Budget threshold rules can trigger on actual or forecasted costs. A forecasted-cost threshold alerts you when spend is projected to exceed the budget by the end of the period."
+  }
+ },
+ {
+  "id": "ace-310",
+  "exam": "ACE",
+  "domain": 1,
+  "objective": "1.1",
+  "topic": "Logging ve Monitoring",
+  "difficulty": "zor",
+  "question": "Operasyon ekibi, 25 farklı projedeki VM'lerin metriklerini tek bir yerden görmek ve bunlar için uyarı tanımlamak istiyor. Google Cloud Observability'yi nasıl kurmalısınız?",
+  "options": [
+   "Tüm projelerin metriklerini bir log sink ile BigQuery'ye aktarıp uyarıları orada zamanlanmış sorgularla oluşturmak",
+   "Tüm VM'leri aynı projeye taşımak; Cloud Monitoring projeler arası metrik görüntüleyemez",
+   "Bir izleme projesini scoping project olarak seçip diğer projeleri onun metrics scope'una eklemek",
+   "Her projede ayrı bir dashboard oluşturup bağlantılarını bir dokümanda toplamak"
+  ],
+  "correct": [
+   2
+  ],
+  "explanation": "Bir projenin metrics scope'u, o projenin (scoping project) hangi projelerin metriklerini görüntüleyip izleyebileceğini belirler. Diğer projeleri metrics scope'a ekleyerek tek yerden dashboard ve uyarı oluşturabilirsiniz.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/monitoring/settings/multiple-projects",
+  "check": [
+   "metrics scope",
+   "scoping project"
+  ],
+  "en": {
+   "question": "The operations team wants to view metrics from VMs in 25 different projects in one place and create alerts for them. How should you set up Google Cloud Observability?",
+   "options": [
+    "Export all projects' metrics to BigQuery with a log sink and build the alerting policies from scheduled queries there",
+    "Move all VMs into the same project; Cloud Monitoring can't view metrics across projects",
+    "Choose a monitoring project as the scoping project and add the other projects to its metrics scope",
+    "Create a separate dashboard in each project and collect the links in a document"
+   ],
+   "explanation": "A project's metrics scope defines which projects' metrics that (scoping) project can view and monitor. By adding other projects to the metrics scope, you can build dashboards and alerts in one place."
+  }
+ },
+ {
+  "id": "ace-311",
+  "exam": "ACE",
+  "domain": 1,
+  "objective": "1.1",
+  "topic": "VPC ve ağ",
+  "difficulty": "zor",
+  "question": "Ekip, prototip için auto mode bir VPC kullandı. Şimdi bu ağı Cloud VPN ile 10.128.0.0/16 aralığını kullanan şirket içi ağa bağlamak ve başka bir auto mode VPC ile peering yapmak istiyor. Temel sorun nedir?",
+  "options": [
+   "Auto mode VPC'ler yalnızca tek bir bölgede alt ağ oluşturur; bu yüzden VPN tünelleri başka bölgelere ulaşamaz",
+   "Auto mode VPC'lerde firewall kuralı tanımlanamaz; bu nedenle VPN trafiğine izin verilemez",
+   "Auto mode VPC'ler Cloud VPN'i desteklemez; yalnızca Dedicated Interconnect ile bağlanabilir",
+   "Auto mode alt ağları 10.128.0.0/9 aralığını kullanır; bu, şirket içiyle çakışır ve auto mode VPC'ler birbirine bağlanamaz"
+  ],
+  "correct": [
+   3
+  ],
+  "explanation": "Auto mode VPC'lerin otomatik alt ağları 10.128.0.0/9 içindeki önceden tanımlı aralıkları kullanır. Tüm auto mode ağlar aynı aralıkları kullandığından birbirine peering veya Cloud VPN ile bağlanamaz; bu aralık şirket içi ağlarla da çakışabilir. Üretim için custom mode önerilir.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/vpc/docs/vpc",
+  "check": [
+   "you can't connect auto mode vpc networks to one another",
+   "10.128.0.0/9"
+  ],
+  "en": {
+   "question": "The team used an auto mode VPC for a prototype. Now they want to connect it with Cloud VPN to an on-premises network that uses 10.128.0.0/16, and to peer it with another auto mode VPC. What is the fundamental problem?",
+   "options": [
+    "Auto mode VPCs create subnets in only one region, so VPN tunnels can't reach other regions",
+    "Firewall rules can't be defined in auto mode VPCs, so VPN traffic can't be allowed",
+    "Auto mode VPCs don't support Cloud VPN; they can only connect through Dedicated Interconnect",
+    "Auto mode subnets use the predefined 10.128.0.0/9 range, which overlaps on-premises, and auto mode VPCs can't be connected to each other"
+   ],
+   "explanation": "Auto mode VPCs' automatic subnets use predefined ranges within 10.128.0.0/9. Because every auto mode network uses the same ranges, they can't be connected to each other with VPC Network Peering or Cloud VPN, and the range can overlap on-premises networks. Custom mode is recommended for production."
+  }
+ },
+ {
+  "id": "ace-312",
+  "exam": "ACE",
+  "domain": 4,
+  "objective": "4.2",
+  "topic": "IAM ve servis hesapları",
+  "difficulty": "zor",
+  "question": "Bir geliştirici, GKE'nin kullandığı container.serviceAgent rolündeki bazı izinlere ihtiyaç duyuyor ve bir ekip arkadaşı bu rolü doğrudan geliştiriciye vermeyi öneriyor. Google'ın önerisi nedir?",
+  "options": [
+   "Vermemek; gereken izinleri içeren başka bir önceden tanımlı rol veya özel rol kullanmak",
+   "Rolü yalnızca IAM koşulu ekleyerek vermek; koşullu bağlamalarda service agent rolleri güvenlidir",
+   "Rolü vermek uygundur; service agent rolleri en az yetki ilkesine göre tasarlandığından insan kullanıcılar için de önerilir",
+   "Rolü vermek için önce geliştiricinin kendi adına bir service agent oluşturmak gerekir"
+  ],
+  "correct": [
+   0
+  ],
+  "explanation": "Google, service agent rollerinin service agent'lar dışındaki kimliklere verilmemesini ister: bu roller çok güçlü izinler içerebilir ve izinleri haber verilmeden değişebilir. Bunun yerine başka bir önceden tanımlı rol veya özel rol kullanılmalıdır.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/iam/docs/service-agents",
+  "check": [
+   "do not grant service agent roles to any principals except service agents"
+  ],
+  "en": {
+   "question": "A developer needs some of the permissions in the container.serviceAgent role used by GKE, and a teammate suggests granting that role directly to the developer. What does Google recommend?",
+   "options": [
+    "Don't grant it; use a different predefined role or a custom role with the needed permissions",
+    "Grant the role only with an IAM condition; service agent roles are safe in conditional bindings",
+    "Granting it is fine; service agent roles are designed for least privilege, so they're also recommended for human users",
+    "First create a service agent for the developer, then grant the role to it"
+   ],
+   "explanation": "Google says not to grant service agent roles to any principals except service agents: these roles can contain very powerful permissions, and the permissions can change without notice. Use a different predefined role or a custom role instead."
+  }
+ },
+ {
+  "id": "ace-313",
+  "exam": "ACE",
+  "domain": 4,
+  "objective": "4.1",
+  "topic": "IAM ve servis hesapları",
+  "difficulty": "zor",
+  "question": "Bir yükleniciye bir projede yalnızca bu ayın sonuna kadar geçerli olacak şekilde Editor rolü vermek için IAM koşulu (request.time) eklemeye çalışıyorsunuz, ancak işlem reddediliyor. Sebep ve çözüm nedir?",
+  "options": [
+   "request.time yalnızca organizasyon düzeyindeki bağlamalarda kullanılabilir; rolü organizasyonda koşulla vermek",
+   "Koşullar Editor gibi temel rollerle kullanılamaz; önceden tanımlı veya özel bir rolü koşulla vermek",
+   "Süre sonu 7 günden uzun olamaz; koşulu haftalık olarak yenilemek",
+   "Koşullar yalnızca servis hesaplarına verilen rollerde desteklenir; yükleniciye bir servis hesabı açmak"
+  ],
+  "correct": [
+   1
+  ],
+  "explanation": "IAM koşulları, Owner (roles/owner), Editor (roles/editor) ve Viewer (roles/viewer) gibi eski temel rollerin verilmesinde kullanılamaz. Geçici erişim için gerekli izinleri içeren önceden tanımlı veya özel bir rol, request.time koşuluyla verilmelidir.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/iam/docs/conditions-overview",
+  "check": [
+   "you cannot use conditions when you grant legacy basic roles"
+  ],
+  "en": {
+   "question": "You're trying to grant a contractor the Editor role on a project with an IAM condition (request.time) so that it's valid only until the end of this month, but the request is rejected. What is the cause and the fix?",
+   "options": [
+    "request.time can only be used in organization-level bindings; grant the role conditionally at the organization",
+    "Conditions can't be used with basic roles like Editor; grant a predefined or custom role with the condition",
+    "The expiry can't be more than 7 days away; renew the condition every week",
+    "Conditions are only supported for roles granted to service accounts; create a service account for the contractor"
+   ],
+   "explanation": "You can't use conditions when granting legacy basic roles, including Owner (roles/owner), Editor (roles/editor) and Viewer (roles/viewer). For temporary access, grant a predefined or custom role containing the needed permissions with a request.time condition."
+  }
+ },
+ {
+  "id": "ace-314",
+  "exam": "ACE",
+  "domain": 4,
+  "objective": "4.1",
+  "topic": "IAM ve servis hesapları",
+  "difficulty": "zor",
+  "question": "Özel (custom) IAM rolleri hakkında hangi İKİ ifade doğrudur? (İki seçenek seçin.)",
+  "options": [
+   "Özel roller bir organizasyon için veya o organizasyondaki belirli bir proje için oluşturulabilir",
+   "Silinen bir özel rol 30 gün boyunca geri getirilebilir ve bu süre boyunca bağlamaları çalışmaya devam eder",
+   "Özel roller, kopyalandıkları önceden tanımlı role Google'ın eklediği yeni izinleri otomatik olarak alır",
+   "Özel roller klasör (folder) düzeyinde oluşturulabilir ve yalnızca o klasörde görünür",
+   "Rolün aşamasını (stage) DISABLED yapmak, o role ait tüm rol bağlamalarını etkisiz hale getirir"
+  ],
+  "correct": [
+   0,
+   4
+  ],
+  "explanation": "Özel roller organizasyon veya proje düzeyinde oluşturulabilir; klasör düzeyinde oluşturulamaz. Aşama DISABLED yapıldığında role ait bağlamalar etkisizleşir. Silinen rol 7 gün içinde geri getirilebilir ve bu sürede bağlamalar etkisizdir. Özel roller otomatik güncellenmez.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/iam/docs/creating-custom-roles",
+  "check": [
+   "you can create custom roles for an entire organization, or for a specific project in that organization",
+   "when a role is disabled, any role bindings related to the role are inactivated"
+  ],
+  "en": {
+   "question": "Which TWO statements about custom IAM roles are true? (Choose two.)",
+   "options": [
+    "Custom roles can be created for an organization or for a specific project in that organization",
+    "A deleted custom role can be recovered for 30 days, and its bindings keep working during that time",
+    "Custom roles automatically receive new permissions that Google adds to the predefined role they were copied from",
+    "Custom roles can be created at the folder level and are visible only in that folder",
+    "Changing a role's launch stage to DISABLED inactivates all role bindings for that role"
+   ],
+   "explanation": "Custom roles can be created at the organization or project level, not at the folder level. When the stage is set to DISABLED, the role's bindings are inactivated. A deleted role can be undeleted within 7 days, and its bindings have no effect meanwhile. Custom roles aren't updated automatically."
+  }
+ },
+ {
+  "id": "ace-315",
+  "exam": "ACE",
+  "domain": 4,
+  "objective": "4.1",
+  "topic": "IAM ve servis hesapları",
+  "difficulty": "zor",
+  "question": "Bir özel rol yanlışlıkla silindi; bu role 40 bağlama (binding) vardı. Ne olur ve ne yapmalısınız?",
+  "options": [
+   "Aynı rol kimliğiyle hemen yeni bir rol oluşturmak yeterlidir; bağlamalar otomatik olarak ona bağlanır",
+   "Bağlamalar 30 gün boyunca etkin kalır; bu sürede rol otomatik olarak yeniden oluşturulur",
+   "Bağlamalar allow politikalarında kalır ama etkisizdir; rol 7 gün içinde undelete ile geri getirilmeli",
+   "Tüm bağlamalar politikalardan hemen silinir; rolü geri getirseniz bile bağlamaları tek tek yeniden eklemelisiniz"
+  ],
+  "correct": [
+   2
+  ],
+  "explanation": "Özel rol silindiğinde ona referans veren bağlamalar allow politikalarında kalır ama etkisizdir. Rol yalnızca 7 gün içinde geri getirilebilir (undelete) ve geri getirildiğinde önceki durumuna döner. Bu süre içinde aynı rol kimliğiyle yeni rol oluşturulamaz.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/iam/docs/creating-custom-roles",
+  "check": [
+   "any role bindings that refer to the role remain in your allow policies, but they have no effect",
+   "you can undelete a role within 7 days"
+  ],
+  "en": {
+   "question": "A custom role was deleted by mistake; there were 40 bindings for this role. What happens, and what should you do?",
+   "options": [
+    "Immediately creating a new role with the same role ID is enough; the bindings attach to it automatically",
+    "The bindings remain effective for 30 days, during which the role is recreated automatically",
+    "The bindings stay in the allow policies but have no effect; undelete the role within 7 days",
+    "All bindings are removed from the policies immediately; even if you restore the role, you must re-add each binding"
+   ],
+   "explanation": "When a custom role is deleted, bindings that refer to it remain in the allow policies but have no effect. The role can be undeleted only within 7 days, which returns it to its previous state. You can't create a new role with the same role ID during that time."
+  }
+ },
+ {
+  "id": "ace-316",
+  "exam": "ACE",
+  "domain": 4,
+  "objective": "4.1",
+  "topic": "IAM ve servis hesapları",
+  "difficulty": "orta",
+  "question": "Projelerinizdeki kullanıcıların ve servis hesaplarının, son 90 günde hiç kullanmadıkları izinlere sahip olduğundan şüpheleniyorsunuz. Fazla izinleri bulup kaldırmanın önerilen yolu nedir?",
+  "options": [
+   "Data Access denetim kayıtlarını açıp kayıtları 90 gün boyunca elle analiz etmek",
+   "Tüm kullanıcıları Viewer rolüne düşürüp şikâyet gelen izinleri geri vermek",
+   "Rol önerilerini (role recommendations) incelemek ve uygun olanları uygulamak",
+   "Policy Troubleshooter ile her kullanıcı ve her izin için ayrı ayrı erişim kontrolü yapmak"
+  ],
+  "correct": [
+   2
+  ],
+  "explanation": "Rol önerileri, kullanım verilerine dayanarak principal'lardaki fazla izinleri belirlemenize ve kaldırmanıza yardımcı olur. Policy Troubleshooter tek bir erişimin neden verildiğini/reddedildiğini açıklar; fazla izinleri toplu olarak bulmaz.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/policy-intelligence/docs/role-recommendations-overview",
+  "check": [
+   "role recommendations help you identify and remove excess permissions from your principals"
+  ],
+  "en": {
+   "question": "You suspect that users and service accounts in your projects have permissions they haven't used in the last 90 days. What is the recommended way to find and remove the excess permissions?",
+   "options": [
+    "Enable Data Access audit logs and analyze the logs manually for 90 days",
+    "Downgrade all users to Viewer and restore permissions when people complain",
+    "Review role recommendations and apply the appropriate ones",
+    "Use Policy Troubleshooter to check access separately for every user and every permission"
+   ],
+   "explanation": "Role recommendations help you identify and remove excess permissions from your principals based on usage. Policy Troubleshooter explains why a single access was granted or denied; it doesn't find excess permissions in bulk."
+  }
+ },
+ {
+  "id": "ace-317",
+  "exam": "ACE",
+  "domain": 4,
+  "objective": "4.2",
+  "topic": "IAM ve servis hesapları",
+  "difficulty": "zor",
+  "question": "Bir toplu iş, generateAccessToken ile bir servis hesabı için kısa ömürlü erişim jetonu alıyor. İş 6 saat sürüyor ve jetonun bu süre boyunca geçerli olması isteniyor. Ne gerekir?",
+  "options": [
+   "İsteğe lifetime=21600s yazmak yeterlidir; erişim jetonları için üst sınır yoktur",
+   "Hiçbir şey; erişim jetonları varsayılan olarak 24 saat geçerlidir",
+   "Kısa ömürlü jeton yerine servis hesabı anahtarı indirip iş bitince silmek; Google'ın önerdiği yöntem budur",
+   "Bu servis hesabı için iam.allowServiceAccountCredentialLifetimeExtension kısıtlamasıyla izin vermek (en fazla 12 saat)"
+  ],
+  "correct": [
+   3
+  ],
+  "explanation": "Varsayılan olarak erişim jetonlarının en uzun ömrü 1 saattir (3.600 saniye). Bunu 12 saate (43.200 saniye) çıkarmak için servis hesabı, iam.allowServiceAccountCredentialLifetimeExtension kısıtlamasını içeren bir organizasyon politikasına eklenmelidir.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/iam/docs/create-short-lived-credentials-direct",
+  "check": [
+   "by default, the maximum token lifetime is 1 hour",
+   "12 hours (43,200 seconds)"
+  ],
+  "en": {
+   "question": "A batch job uses generateAccessToken to get a short-lived access token for a service account. The job runs for 6 hours, and the token needs to stay valid for that long. What is required?",
+   "options": [
+    "Setting lifetime=21600s in the request is enough; there's no upper limit for access tokens",
+    "Nothing; access tokens are valid for 24 hours by default",
+    "Download a service account key instead and delete it when the job finishes; this is the method Google recommends",
+    "Allow it for this service account with the iam.allowServiceAccountCredentialLifetimeExtension constraint (max 12 hours)"
+   ],
+   "explanation": "By default, the maximum lifetime of an access token is 1 hour (3,600 seconds). To extend it to 12 hours (43,200 seconds), add the service account to an organization policy that includes the iam.allowServiceAccountCredentialLifetimeExtension constraint."
+  }
+ },
+ {
+  "id": "ace-318",
+  "exam": "ACE",
+  "domain": 4,
+  "objective": "4.2",
+  "topic": "IAM ve servis hesapları",
+  "difficulty": "zor",
+  "question": "Merkezi 'shared-sa' projesindeki bir servis hesabını 'app-prod' projesindeki VM'lere eklemek (attach) istiyorsunuz, ancak işlem bir organizasyon politikası yüzünden başarısız oluyor. Hangi kısıtlama kontrol edilmelidir?",
+  "options": [
+   "compute.vmExternalIpAccess; harici IP'si olan VM'lere başka projeden servis hesabı eklenemez",
+   "iam.disableServiceAccountKeyCreation; projeler arası kullanım için anahtar oluşturmak gerekir",
+   "iam.allowedPolicyMemberDomains; servis hesapları farklı projedeyse farklı alan adı sayılır",
+   "shared-sa projesinde iam.disableCrossProjectServiceAccountUsage kısıtlaması zorunlu olmamalı"
+  ],
+  "correct": [
+   3
+  ],
+  "explanation": "Bir servis hesabını başka projedeki bir kaynağa eklemek için, servis hesabının bulunduğu projede iam.disableCrossProjectServiceAccountUsage boolean kısıtlamasının zorunlu tutulmaması gerekir. Projeler arası ekleme anahtar gerektirmez.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/iam/docs/attach-service-accounts",
+  "check": [
+   "iam.disablecrossprojectserviceaccountusage boolean constraint is not enforced for the project"
+  ],
+  "en": {
+   "question": "You want to attach a service account from the central 'shared-sa' project to VMs in the 'app-prod' project, but it fails because of an organization policy. Which constraint should you check?",
+   "options": [
+    "compute.vmExternalIpAccess; service accounts from other projects can't be attached to VMs with external IPs",
+    "iam.disableServiceAccountKeyCreation; cross-project use requires creating a key",
+    "iam.allowedPolicyMemberDomains; service accounts in a different project count as a different domain",
+    "The iam.disableCrossProjectServiceAccountUsage constraint must not be enforced in shared-sa"
+   ],
+   "explanation": "To attach a service account to a resource in another project, the iam.disableCrossProjectServiceAccountUsage boolean constraint must not be enforced for the project that contains the service account. Cross-project attachment doesn't require keys."
+  }
+ },
+ {
+  "id": "ace-319",
+  "exam": "ACE",
+  "domain": 4,
+  "objective": "4.2",
+  "topic": "GKE (Kubernetes)",
+  "difficulty": "zor",
+  "question": "GKE'deki bir uygulama, 'payments' namespace'indeki 'billing-ksa' Kubernetes servis hesabıyla çalışıyor ve bir Cloud Storage bucket'ını okuması gerekiyor. Workload Identity Federation for GKE etkin. Ayrı bir IAM servis hesabı oluşturmadan erişim nasıl verilir?",
+  "options": [
+   "Kubernetes servis hesabına iam.gke.io/gcp-service-account ek açıklamasını (annotation) bucket adıyla eklemek",
+   "Düğüm havuzunun servis hesabına Storage Object Viewer rolünü vermek; Workload Identity Federation for GKE açıkken o düğümlerdeki tüm pod'lar bu kimliği otomatik kullanır",
+   "Bucket'ta rolü principal://iam.googleapis.com/projects/PROJE_NO/locations/global/workloadIdentityPools/PROJE_ID.svc.id.goog/subject/ns/payments/sa/billing-ksa kimliğine vermek",
+   "Pod'a bir servis hesabı anahtarını Kubernetes Secret olarak bağlamak; federasyon yalnızca Google API'leri için anahtarla çalışır"
+  ],
+  "correct": [
+   2
+  ],
+  "explanation": "Workload Identity Federation for GKE ile IAM rollerini, principal:// tanımlayıcısıyla doğrudan Kubernetes servis hesabına verebilirsiniz. Düğüm servis hesabına rol vermek tüm pod'lara erişim açar; anotasyon ise bir IAM servis hesabını taklit etmek içindir.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/kubernetes-engine/docs/how-to/workload-identity",
+  "check": [
+   "principal://iam.googleapis.com/projects/"
+  ],
+  "en": {
+   "question": "An application in GKE runs as the 'billing-ksa' Kubernetes service account in the 'payments' namespace and needs to read a Cloud Storage bucket. Workload Identity Federation for GKE is enabled. How do you grant access without creating a separate IAM service account?",
+   "options": [
+    "Add the iam.gke.io/gcp-service-account annotation with the bucket name to the Kubernetes service account",
+    "Grant Storage Object Viewer to the node pool's service account; with Workload Identity Federation for GKE, all Pods on those nodes automatically use that identity",
+    "Grant the role on the bucket to principal://iam.googleapis.com/projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/PROJECT_ID.svc.id.goog/subject/ns/payments/sa/billing-ksa",
+    "Mount a service account key as a Kubernetes Secret in the Pod; federation only works with keys for Google APIs"
+   ],
+   "explanation": "With Workload Identity Federation for GKE, you can grant IAM roles directly to a Kubernetes service account using its principal:// identifier. Granting the role to the node service account opens access to all Pods; the annotation is for impersonating an IAM service account."
+  }
+ },
+ {
+  "id": "ace-320",
+  "exam": "ACE",
+  "domain": 2,
+  "objective": "2.1",
+  "topic": "Compute Engine",
+  "difficulty": "zor",
+  "question": "Bir veritabanı VM'i 2 TB Hyperdisk Balanced kullanıyor. Kapasite yeterli, ancak ay sonu raporlamasında disk IOPS sınırına takılıyor. Maliyeti gereksiz artırmadan ne yapmalısınız?",
+  "options": [
+   "Diskin boyutunu değiştirmeden sağlanan (provisioned) IOPS değerini artırmak",
+   "Diski 4 TB'a büyütmek; Hyperdisk'te IOPS yalnızca disk boyutuna göre otomatik ölçeklenir ve ayrıca ayarlanamaz",
+   "Diski Local SSD'ye çevirmek; Local SSD verisi VM durdurulsa bile kalıcıdır",
+   "VM'in makine tipini küçültmek; daha az vCPU disk kuyruğunu azaltarak IOPS'u yükseltir"
+  ],
+  "correct": [
+   0
+  ],
+  "explanation": "Hyperdisk'te her birimin performansını (IOPS ve/veya throughput) ve boyutunu ayrı ayrı yapılandırabilir, performansı boyutu değiştirmeden artırıp azaltabilirsiniz. Persistent Disk'te ise performans boyuta bağlıdır.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/compute/docs/disks/hyperdisks",
+  "check": [
+   "increase or decrease a hyperdisk volume's performance without changing its size"
+  ],
+  "en": {
+   "question": "A database VM uses a 2 TB Hyperdisk Balanced volume. Capacity is sufficient, but month-end reporting hits the disk's IOPS limit. What should you do without increasing cost unnecessarily?",
+   "options": [
+    "Increase the provisioned IOPS without changing the disk size",
+    "Grow the disk to 4 TB; Hyperdisk IOPS scale automatically with disk size only and can't be set separately",
+    "Switch the disk to Local SSD; Local SSD data persists even when the VM is stopped",
+    "Use a smaller machine type; fewer vCPUs reduce the disk queue and raise IOPS"
+   ],
+   "explanation": "With Hyperdisk you can configure each volume's performance (IOPS and/or throughput) and size separately, and increase or decrease performance without changing the size. With Persistent Disk, performance is tied to size."
+  }
+ },
+ {
+  "id": "ace-321",
+  "exam": "ACE",
+  "domain": 2,
+  "objective": "2.1",
+  "topic": "Compute Engine",
+  "difficulty": "zor",
+  "question": "Hataya dayanıklı bir toplu iş için Spot VM kullanmayı planlıyorsunuz. Spot VM'ler hakkında hangi İKİ ifade doğrudur? (İki seçenek seçin.)",
+  "options": [
+   "Compute Engine, önlemeden en az 10 dakika önce sanal makineye uyarı gönderir",
+   "Spot VM'ler yalnızca yönetilen instance group'larda (MIG) oluşturulabilir",
+   "Spot VM'lerin en kısa veya en uzun çalışma süresi yoktur",
+   "Önleme (preemption) sırasında yapılacak eylem STOP (varsayılan) ya da DELETE olarak seçilebilir",
+   "Spot VM'ler 24 saat çalıştıktan sonra Compute Engine tarafından her zaman durdurulur"
+  ],
+  "correct": [
+   2,
+   3
+  ],
+  "explanation": "Spot VM'lerin minimum veya maksimum çalışma süresi yoktur (eski preemptible VM'lerdeki 24 saat sınırı yoktur) ve Compute Engine onları istediği zaman önleyebilir. Önleme eylemi varsayılan olarak STOP'tur, DELETE seçilebilir. Tek başına da oluşturulabilirler.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/compute/docs/instances/spot",
+  "check": [
+   "spot vms don't have a minimum or maximum runtime"
+  ],
+  "en": {
+   "question": "You plan to use Spot VMs for a fault-tolerant batch job. Which TWO statements about Spot VMs are true? (Choose two.)",
+   "options": [
+    "Compute Engine warns the VM at least 10 minutes before preemption",
+    "Spot VMs can only be created in managed instance groups (MIGs)",
+    "Spot VMs don't have a minimum or maximum runtime",
+    "The action taken on preemption can be set to STOP (the default) or DELETE",
+    "Compute Engine always stops Spot VMs after they have run for 24 hours"
+   ],
+   "explanation": "Spot VMs have no minimum or maximum runtime (unlike the 24-hour limit of legacy preemptible VMs), and Compute Engine can preempt them at any time. The termination action defaults to STOP and can be set to DELETE. They can also be created as standalone VMs."
+  }
+ },
+ {
+  "id": "ace-322",
+  "exam": "ACE",
+  "domain": 2,
+  "objective": "2.1",
+  "topic": "GKE (Kubernetes)",
+  "difficulty": "zor",
+  "question": "Düğümleri yalnızca dahili IP'ye sahip (private nodes) bir GKE kümesinde, pod'lar Docker Hub'dan herkese açık bir imajı çekemiyor; Artifact Registry'deki imajlar ise sorunsuz çekiliyor. Ne yapmalısınız?",
+  "options": [
+   "Private Google Access'i kapatmak; açıkken düğümler yalnızca Google API'lerine gidebilir ve internet trafiği engellenir",
+   "Docker Hub için 0.0.0.0/0 hedefli bir ingress firewall kuralı eklemek",
+   "Düğümlere harici IP vermek için kümeyi silmeden düğüm havuzunda --enable-external-ips bayrağını açmak",
+   "Kümenin bölgesinde Cloud NAT yapılandırmak; özel düğümlere giden internet erişimi bu şekilde sağlanır"
+  ],
+  "correct": [
+   3
+  ],
+  "explanation": "Özel düğümlerin harici IP'si yoktur ve Google API'lerine yalnızca sınırlı erişimleri vardır (Private Google Access, Artifact Registry'yi çalıştırır). İnternete giden erişim için Cloud NAT kullanılır. Private Google Access, NAT kullanmıyorsanız kapatılmamalıdır.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/kubernetes-engine/docs/how-to/legacy/network-isolation",
+  "check": [
+   "to provide outbound internet access for your private nodes, you can use cloud nat"
+  ],
+  "en": {
+   "question": "In a GKE cluster whose nodes only have internal IPs (private nodes), Pods can't pull a public image from Docker Hub, but images from Artifact Registry pull fine. What should you do?",
+   "options": [
+    "Disable Private Google Access; while it's on, nodes can only reach Google APIs and internet traffic is blocked",
+    "Add an ingress firewall rule with destination 0.0.0.0/0 for Docker Hub",
+    "Turn on an --enable-external-ips flag on the node pool to give nodes external IPs without recreating the cluster",
+    "Configure Cloud NAT in the cluster's region; this is how outbound internet access is provided to private nodes"
+   ],
+   "explanation": "Private nodes have no external IP and only limited access to Google APIs (Private Google Access is why Artifact Registry works). Outbound internet access is provided with Cloud NAT. You shouldn't disable Private Google Access unless you use NAT to access the internet."
+  }
+ },
+ {
+  "id": "ace-323",
+  "exam": "ACE",
+  "domain": 2,
+  "objective": "2.1",
+  "topic": "Gemini ve yapay zekâ araçları",
+  "difficulty": "zor",
+  "question": "Araştırma ekibinin modeli, ana eğitim döngüsünde özel (custom) işlemler kullanıyor ve yüksek hassasiyetli aritmetik gerektiriyor. Ekip TPU mu GPU mu kullanmalı?",
+  "options": [
+   "GPU; Google bu tür iş yüklerini Cloud TPU'lara uygun görmez",
+   "TPU; TPU'lar yalnızca yüksek hassasiyetli (64 bit) aritmetikte GPU'lardan hızlıdır",
+   "Fark etmez; Google Cloud aynı iş yükünü otomatik olarak uygun hızlandırıcıya yönlendirir",
+   "TPU; TPU'lar özel işlemler ve sık dallanma içeren programlar için optimize edilmiştir"
+  ],
+  "correct": [
+   0
+  ],
+  "explanation": "Cloud TPU'lar büyük matris işlemleri ağırlıklı modellerde güçlüdür; ancak sık dallanma veya çok sayıda eleman bazlı işlem içeren programlar, yüksek hassasiyetli aritmetik gerektiren iş yükleri ve ana eğitim döngüsünde özel işlemler içeren modeller TPU'lara uygun değildir. Bunlar için GPU daha uygundur.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/tpu/docs/intro-to-tpu",
+  "check": [
+   "cloud tpus are not suited to the following workloads",
+   "workloads that require high-precision arithmetic"
+  ],
+  "en": {
+   "question": "The research team's model uses custom operations in the main training loop and requires high-precision arithmetic. Should the team use TPUs or GPUs?",
+   "options": [
+    "GPUs; Google lists these workloads as not suited to Cloud TPUs",
+    "TPUs; TPUs are faster than GPUs specifically for high-precision (64-bit) arithmetic",
+    "It doesn't matter; Google Cloud automatically routes the same workload to the right accelerator",
+    "TPUs; TPUs are optimized for programs with custom operations and frequent branching"
+   ],
+   "explanation": "Cloud TPUs excel at models dominated by large matrix operations, but programs with frequent branching or many element-wise operations, workloads requiring high-precision arithmetic, and models with custom operations in the main training loop aren't suited to TPUs. GPUs fit these better."
+  }
+ },
+ {
+  "id": "ace-324",
+  "exam": "ACE",
+  "domain": 2,
+  "objective": "2.1",
+  "topic": "Serverless (Cloud Run, Functions, App Engine)",
+  "difficulty": "orta",
+  "question": "Bir Cloud Run servisinin, bucket'a yeni bir nesne yazıldığında (yeni yükleme veya mevcut nesnenin üzerine yazma) tetiklenmesini, ancak silme ve meta veri güncellemelerinde tetiklenmemesini istiyorsunuz. Eventarc tetikleyicisinde hangi olay türünü kullanırsınız?",
+  "options": [
+   "google.cloud.storage.object.v1.archived",
+   "google.cloud.storage.object.v1.finalized",
+   "google.cloud.storage.object.v1.metadataUpdated",
+   "google.cloud.audit.log.v1.written (storage.objects.list yöntemi için)"
+  ],
+  "correct": [
+   1
+  ],
+  "explanation": "finalized olayı, bucket'ta yeni bir nesne oluşturulduğunda (veya mevcut bir nesnenin üzerine yeni nesil yazıldığında) gönderilir. metadataUpdated meta veri değişikliklerinde, archived ise sürümlemeli bucket'ta nesne eski sürüm olduğunda gönderilir.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/eventarc/docs/run/route-trigger-cloud-storage",
+  "check": [
+   "google.cloud.storage.object.v1.finalized"
+  ],
+  "en": {
+   "question": "You want a Cloud Run service to be triggered when a new object is written to a bucket (a new upload or an overwrite of an existing object), but not on deletions or metadata updates. Which event type do you use in the Eventarc trigger?",
+   "options": [
+    "google.cloud.storage.object.v1.archived",
+    "google.cloud.storage.object.v1.finalized",
+    "google.cloud.storage.object.v1.metadataUpdated",
+    "google.cloud.audit.log.v1.written (for the storage.objects.list method)"
+   ],
+   "explanation": "The finalized event is sent when a new object is created in the bucket (or a new generation overwrites an existing object). metadataUpdated is sent on metadata changes, and archived when an object becomes a noncurrent version in a versioned bucket."
+  }
+ },
+ {
+  "id": "ace-325",
+  "exam": "ACE",
+  "domain": 2,
+  "objective": "2.1",
+  "topic": "Compute Engine",
+  "difficulty": "orta",
+  "question": "Projedeki tüm VM'lerde SSH erişimi için OS Login ile birlikte iki adımlı doğrulama (2FA) zorunlu olsun istiyorsunuz. Proje meta verisinde ne ayarlamalısınız?",
+  "options": [
+   "block-project-ssh-keys=TRUE yapmak; bu ayar 2FA'yı zorunlu kılar",
+   "enable-oslogin ve enable-oslogin-2fa anahtarlarının ikisini de TRUE yapmak",
+   "Yalnızca enable-oslogin-2fa=TRUE yapmak; bu anahtar OS Login'i de otomatik olarak açar",
+   "Yalnızca enable-oslogin=TRUE yapmak; 2FA, Google hesabında açıksa her zaman uygulanır"
+  ],
+  "correct": [
+   1
+  ],
+  "explanation": "OS Login 2FA'nın uygulanması için hem enable-oslogin hem de enable-oslogin-2fa meta verisi TRUE olmalıdır. Kullanıcıların Google hesabında veya alan adında 2 adımlı doğrulama kurulu olmalıdır.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/compute/docs/oslogin/set-up-oslogin",
+  "check": [
+   "metadata for both os login ( enable-oslogin ) and os login 2fa ( enable-oslogin-2fa ) must be set to true"
+  ],
+  "en": {
+   "question": "You want two-step verification (2FA) to be required for SSH access with OS Login on all VMs in the project. What should you set in project metadata?",
+   "options": [
+    "Set block-project-ssh-keys=TRUE; this setting enforces 2FA",
+    "Set both enable-oslogin and enable-oslogin-2fa to TRUE",
+    "Set only enable-oslogin-2fa=TRUE; this key also turns on OS Login automatically",
+    "Set only enable-oslogin=TRUE; 2FA is always enforced if it's on in the Google account"
+   ],
+   "explanation": "For OS Login 2FA to be enforced, metadata for both OS Login (enable-oslogin) and OS Login 2FA (enable-oslogin-2fa) must be set to TRUE. Users must have 2-step verification set up on their Google account or domain."
+  }
+ },
+ {
+  "id": "ace-326",
+  "exam": "ACE",
+  "domain": 2,
+  "objective": "2.1",
+  "topic": "Instance group ve yük dengeleme",
+  "difficulty": "zor",
+  "question": "Otomatik ölçeklenen bir MIG'de uygulama açılışta yaklaşık 3 dakika boyunca önbelleği doldururken CPU'yu %100 kullanıyor. Bu yüzden autoscaler gereksiz yere çok sayıda yeni VM ekliyor. Ne ayarlamalısınız?",
+  "options": [
+   "Autoscaler'ın initialization period değerini yaklaşık 180 saniye yapmak",
+   "Autohealing health check'inin initial delay değerini 180 saniye yapmak; autoscaler da bu değeri kullanır",
+   "Hedef CPU kullanımını %100'e çıkarmak; böylece açılıştaki yük ölçeklemeyi tetiklemez",
+   "Maksimum VM sayısını mevcut VM sayısına eşitlemek"
+  ],
+  "correct": [
+   0
+  ],
+  "explanation": "Initialization period, uygulamanın VM'de başlatılması için geçen süredir; bu sürede VM'in kullanım verisi normali yansıtmayabileceğinden autoscaler ölçekleme kararlarında bunu dikkate alır. Autohealing'in initial delay değeri ise yalnızca sağlık kontrolü hatalarının göz ardı edilmesini sağlar.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/compute/docs/autoscaler",
+  "check": [
+   "the initialization period, formerly known as cool down period"
+  ],
+  "en": {
+   "question": "In an autoscaled MIG, the application uses 100% CPU for about 3 minutes at startup while warming its cache. As a result, the autoscaler adds many unnecessary VMs. What should you set?",
+   "options": [
+    "Set the autoscaler's initialization period to about 180 seconds",
+    "Set the autohealing health check's initial delay to 180 seconds; the autoscaler uses this value too",
+    "Raise the target CPU utilization to 100% so that startup load doesn't trigger scaling",
+    "Set the maximum number of VMs equal to the current number of VMs"
+   ],
+   "explanation": "The initialization period is how long it takes for applications to initialize on a VM; because usage data during that time may not reflect normal conditions, the autoscaler accounts for it in scaling decisions. Autohealing's initial delay only makes the MIG ignore failed health checks."
+  }
+ },
+ {
+  "id": "ace-327",
+  "exam": "ACE",
+  "domain": 2,
+  "objective": "2.1",
+  "topic": "Instance group ve yük dengeleme",
+  "difficulty": "zor",
+  "question": "Autohealing etkin bir MIG'de yeni oluşturulan VM'ler, başlangıç betiği bitmeden sağlık kontrolünde başarısız olduğu için sürekli yeniden oluşturuluyor. Başlangıç betiği yaklaşık 4 dakika sürüyor. Ne yapmalısınız?",
+  "options": [
+   "Sağlık kontrolünün unhealthy threshold değerini 1'e düşürmek",
+   "Autohealing'i kapatıp VM'leri elle izlemek",
+   "Autoscaler'ın initialization period değerini 300 saniye yapmak; MIG bu değeri autohealing'i geciktirmek için de kullanır",
+   "Autohealing initial delay değerini başlangıç süresinden biraz uzun (ör. 300 saniye) ayarlamak"
+  ],
+  "correct": [
+   3
+  ],
+  "explanation": "Initial delay, yeni bir VM'in başlatılıp başlangıç betiğini çalıştırması için gereken süredir; bu süre boyunca MIG başarısız sağlık kontrollerini yok sayar ve VM'i erkenden yeniden oluşturmaz. Autoscaler'ın initialization period'u autohealing'i etkilemez.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/compute/docs/instance-groups/autohealing-instances-in-migs",
+  "check": [
+   "during a vm's initial delay period, the mig ignores unsuccessful health checks"
+  ],
+  "en": {
+   "question": "In a MIG with autohealing, newly created VMs keep getting recreated because they fail the health check before their startup script finishes. The startup script takes about 4 minutes. What should you do?",
+   "options": [
+    "Lower the health check's unhealthy threshold to 1",
+    "Turn off autohealing and monitor the VMs manually",
+    "Set the autoscaler's initialization period to 300 seconds; the MIG also uses this value to delay autohealing",
+    "Set the autohealing initial delay slightly longer than the startup time (e.g. 300 seconds)"
+   ],
+   "explanation": "The initial delay is the time a new VM needs to initialize and run its startup script; during that period, the MIG ignores unsuccessful health checks so it doesn't recreate the VM prematurely. The autoscaler's initialization period doesn't affect autohealing."
+  }
+ },
+ {
+  "id": "ace-328",
+  "exam": "ACE",
+  "domain": 2,
+  "objective": "2.1",
+  "topic": "GKE (Kubernetes)",
+  "difficulty": "zor",
+  "question": "Kritik bir uygulama için GKE kümesi oluşturuyorsunuz. Tek bir zonun tamamen kesintiye uğraması durumunda hem kontrol düzleminin (control plane) hem de iş yüklerinin çalışmaya devam etmesi gerekiyor. Hangi yapılandırmayı seçmelisiniz?",
+  "options": [
+   "Tek zonlu küme ve 3 düğüm havuzu; düğüm havuzları farklı makine türleri kullandığı için kesintiden etkilenmez",
+   "Bölgesel (regional) küme; kontrol düzleminin kopyaları ve düğümler bölgedeki birden çok zona dağıtılır",
+   "Çok zonlu (multi-zonal) küme; düğümler birden çok zonda olur ve kontrol düzlemi de her zonda otomatik olarak çoğaltılır",
+   "Tek zonlu küme ve kümenin her gece yedeklenmesi"
+  ],
+  "correct": [
+   1
+  ],
+  "explanation": "Bölgesel küme, kontrol düzleminin birden çok kopyasını bölgedeki farklı zonlarda çalıştırır ve düğümleri varsayılan olarak üç zonda sağlar. Çok zonlu kümede düğümler birden çok zondadır, ancak kontrol düzlemi tek bir zondadır.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/kubernetes-engine/docs/concepts/regional-clusters",
+  "check": [
+   "creates multiple replicas of the control plane in different"
+  ],
+  "en": {
+   "question": "You're creating a GKE cluster for a critical application. If a single zone has a complete outage, both the control plane and the workloads must keep running. Which configuration should you choose?",
+   "options": [
+    "A single-zone cluster with 3 node pools; the node pools use different machine types, so an outage doesn't affect them",
+    "A regional cluster; control plane replicas and nodes are spread across multiple zones in the region",
+    "A multi-zonal cluster; nodes run in multiple zones and the control plane is also automatically replicated in each zone",
+    "A single-zone cluster that is backed up every night"
+   ],
+   "explanation": "A regional cluster runs multiple replicas of the control plane in different zones of the region and provisions nodes in three zones by default. In a multi-zonal cluster, nodes span multiple zones but the control plane is in a single zone."
+  }
+ },
+ {
+  "id": "ace-329",
+  "exam": "ACE",
+  "domain": 2,
+  "objective": "2.1",
+  "topic": "Compute Engine",
+  "difficulty": "zor",
+  "question": "Bir bellek içi analitik uygulaması 4 vCPU ile yetiniyor, ancak standart oranların üzerinde 96 GB bellek istiyor. Uygulamayı E2 özel (custom) makine tipiyle oluşturmaya çalıştığınızda istediğiniz bellek oranını ayarlayamıyorsunuz. Ne yapmalısınız?",
+  "options": [
+   "G2 özel makine tipini seçmek; G2 en yüksek bellek/vCPU oranını sunar",
+   "Daha fazla vCPU'lu önceden tanımlı bir E2 makine tipi seçip kullanılmayan vCPU'ları işletim sisteminde kapatmak",
+   "E2 özel makine tipinde extended memory seçeneğini açmak",
+   "N2 (veya N4/N2D gibi destekleyen bir seri) özel makine tipi kullanıp extended memory eklemek"
+  ],
+  "correct": [
+   3
+  ],
+  "explanation": "Extended memory, N4, N4A, N4D, N2, N2D ve N1 özel makine tiplerinde kullanılabilir. Önceden tanımlı makine tipleri ile G2 ve E2 özel makine tipleri extended memory'yi desteklemez.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/compute/docs/instances/creating-instance-with-custom-machine-type",
+  "check": [
+   "predefined machine types, as well as g2 and e2 custom machine types, don't support extended memory"
+  ],
+  "en": {
+   "question": "An in-memory analytics application needs only 4 vCPUs but 96 GB of memory, which is beyond the standard ratios. When you try an E2 custom machine type, you can't set the memory ratio you want. What should you do?",
+   "options": [
+    "Choose a G2 custom machine type; G2 offers the highest memory-to-vCPU ratio",
+    "Choose a predefined E2 machine type with more vCPUs and disable the unused vCPUs in the operating system",
+    "Enable the extended memory option on the E2 custom machine type",
+    "Use an N2 (or another supported series such as N4 or N2D) custom machine type and add extended memory"
+   ],
+   "explanation": "Extended memory is available on N4, N4A, N4D, N2, N2D and N1 custom machine types. Predefined machine types, as well as G2 and E2 custom machine types, don't support extended memory."
+  }
+ },
+ {
+  "id": "ace-330",
+  "exam": "ACE",
+  "domain": 2,
+  "objective": "2.2",
+  "topic": "Veritabanları",
+  "difficulty": "zor",
+  "question": "Bir Bigtable örneğinde (instance) iki farklı bölgede kümeler var. Bir küme kullanılamaz hale geldiğinde uygulama isteklerinin otomatik olarak diğer kümeye yönlenmesini istiyorsunuz. Ne yapılandırmalısınız?",
+  "options": [
+   "Her kümeye ayrı bir bağlantı dizesi verip uygulamada DNS tabanlı failover yazmak",
+   "Uygulamanın önüne bir global external Application Load Balancer koymak",
+   "App profile'ı single-cluster routing ile yapılandırıp her iki kümeyi de listelemek",
+   "Uygulamanın kullandığı app profile'ı multi-cluster routing ile yapılandırmak"
+  ],
+  "correct": [
+   3
+  ],
+  "explanation": "Multi-cluster routing kullanan bir app profile, istekleri en yakın kullanılabilir kümeye yönlendirir ve bir küme kullanılamaz olduğunda otomatik failover sağlar. Single-cluster routing istekleri tek bir kümeye gönderir; failover manuel yapılır.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/bigtable/docs/failovers",
+  "check": [
+   "if an app profile uses multi-cluster routing, bigtable handles failovers automatically"
+  ],
+  "en": {
+   "question": "A Bigtable instance has clusters in two different regions. When one cluster becomes unavailable, you want application requests to be routed automatically to the other cluster. What should you configure?",
+   "options": [
+    "Give each cluster its own connection string and write DNS-based failover in the application",
+    "Put a global external Application Load Balancer in front of the application",
+    "Configure the app profile with single-cluster routing and list both clusters",
+    "Configure the app profile used by the application with multi-cluster routing"
+   ],
+   "explanation": "An app profile with multi-cluster routing routes requests to the nearest available cluster and fails over automatically when a cluster becomes unavailable. Single-cluster routing sends requests to one cluster, and failover is manual."
+  }
+ },
+ {
+  "id": "ace-331",
+  "exam": "ACE",
+  "domain": 2,
+  "objective": "2.2",
+  "topic": "Veritabanları",
+  "difficulty": "zor",
+  "question": "Küresel bir ödeme sistemi için, yatay ölçeklenen, güçlü tutarlılığa sahip ilişkisel bir veritabanına ihtiyacınız var ve hedef kullanılabilirlik %99,999. Hangi seçim bu hedefi karşılar?",
+  "options": [
+   "Cloud SQL için yüksek kullanılabilirlik (HA) yapılandırması ve başka bölgede okuma kopyası",
+   "Spanner bölgesel (regional) yapılandırma; bölgesel örnekler de %99,999 kullanılabilirlik sunar",
+   "Spanner çok bölgeli (multi-region) veya çift bölgeli (dual-region) yapılandırma",
+   "Birden çok bölgede kümeleri olan Bigtable örneği"
+  ],
+  "correct": [
+   2
+  ],
+  "explanation": "Spanner çok bölgeli ve çift bölgeli yapılandırmalar %99,999 kullanılabilirlik sunar; bölgesel yapılandırmalar %99,99 sunar. Bigtable ilişkisel değildir; Cloud SQL yatay ölçeklenmez.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/spanner/docs/instance-configurations",
+  "check": [
+   "99.999% availability , which is greater than the 99.99% availability that spanner regional configurations provide"
+  ],
+  "en": {
+   "question": "For a global payment system you need a horizontally scalable, strongly consistent relational database with a 99.999% availability target. Which choice meets this target?",
+   "options": [
+    "A Cloud SQL high availability (HA) configuration with a read replica in another region",
+    "A Spanner regional configuration; regional instances also provide 99.999% availability",
+    "A Spanner multi-region or dual-region configuration",
+    "A Bigtable instance with clusters in multiple regions"
+   ],
+   "explanation": "Spanner multi-region and dual-region configurations provide 99.999% availability; regional configurations provide 99.99%. Bigtable isn't relational, and Cloud SQL doesn't scale horizontally."
+  }
+ },
+ {
+  "id": "ace-332",
+  "exam": "ACE",
+  "domain": 2,
+  "objective": "2.2",
+  "topic": "Veritabanları",
+  "difficulty": "zor",
+  "question": "AlloyDB for PostgreSQL üzerinde çalışan işlem (OLTP) uygulamanız var. Analistler aynı veriler üzerinde büyük tabloları tarayan, birleştiren ve toplayan raporlar çalıştırıyor ve bu sorgular yavaş. Veriyi başka bir sisteme taşımadan ne kullanabilirsiniz?",
+  "options": [
+   "AlloyDB'yi Memorystore for Redis önbelleğiyle değiştirip raporları önbellekten çalıştırmak",
+   "AlloyDB columnar engine; seçili sütunları bellekte sütun biçiminde tutar",
+   "Tabloları Bigtable'a taşımak; Bigtable SQL birleştirmelerinde en hızlı seçenektir",
+   "Primary instance'ın makine tipini küçültüp daha fazla okuma havuzu düğümü eklemek; columnar engine read pool'larda kullanılamaz"
+  ],
+  "correct": [
+   1
+  ],
+  "explanation": "AlloyDB columnar engine, seçili sütunları bellekte sütun odaklı biçimde saklayarak büyük veri tarayan, birleştiren ve toplayan SQL sorgularını hızlandırır; primary ve read pool instance'larında kullanılabilir.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/alloydb/docs/columnar-engine/about",
+  "check": [
+   "speeds up sql queries that scan, join, and aggregate large amounts of data"
+  ],
+  "en": {
+   "question": "You have a transactional (OLTP) application on AlloyDB for PostgreSQL. Analysts run reports that scan, join and aggregate large tables on the same data, and these queries are slow. What can you use without moving the data to another system?",
+   "options": [
+    "Replace AlloyDB with a Memorystore for Redis cache and run the reports from the cache",
+    "The AlloyDB columnar engine, which keeps selected columns in memory in columnar format",
+    "Move the tables to Bigtable; Bigtable is the fastest option for SQL joins",
+    "Shrink the primary instance and add more read pool nodes; the columnar engine can't be used on read pools"
+   ],
+   "explanation": "The AlloyDB columnar engine speeds up SQL queries that scan, join and aggregate large amounts of data by storing selected columns in memory in a column-oriented format; it can be used on primary and read pool instances."
+  }
+ },
+ {
+  "id": "ace-333",
+  "exam": "ACE",
+  "domain": 2,
+  "objective": "2.2",
+  "topic": "Veritabanları",
+  "difficulty": "zor",
+  "question": "Cloud SQL for MySQL örneğiniz yüksek kullanılabilirlik (HA) ile yapılandırılmış. Okuma trafiği arttı ve bir ekip arkadaşı okuma sorgularını boşta bekleyen standby örneğine yönlendirmeyi öneriyor. Doğru yaklaşım nedir?",
+  "options": [
+   "Standby örneğin IP adresini uygulamaya vermek; HA standby örneği okuma trafiğini otomatik olarak dengeler",
+   "HA'yı kapatıp standby'ı bağımsız bir okuma örneğine dönüştürmek",
+   "Primary örneği daha büyük bir makine tipine taşımak; Cloud SQL'de okuma replikası oluşturulamaz",
+   "Standby okuma sorgusu alamaz; tercihen üçüncü bir zonda read replica eklemek"
+  ],
+  "correct": [
+   3
+  ],
+  "explanation": "Cloud SQL HA yapılandırmasında standby örneği okuma sorguları için kullanılamaz; yalnızca failover içindir. Okuma ölçeklemek için read replica eklenir; Google, replikaları primary ve standby'dan farklı bir zona koymayı önerir.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/sql/docs/mysql/high-availability",
+  "check": [
+   "the standby instance cannot be used for read queries"
+  ],
+  "en": {
+   "question": "Your Cloud SQL for MySQL instance is configured for high availability (HA). Read traffic has grown, and a teammate suggests sending read queries to the idle standby instance. What is the right approach?",
+   "options": [
+    "Give the application the standby instance's IP address; the HA standby automatically balances read traffic",
+    "Disable HA and convert the standby into an independent read instance",
+    "Move the primary to a larger machine type; Cloud SQL doesn't support read replicas",
+    "The standby can't serve reads; add a read replica, ideally in a third zone"
+   ],
+   "explanation": "In a Cloud SQL HA configuration, the standby instance can't be used for read queries; it's only for failover. To scale reads, add read replicas; Google recommends placing them in a zone different from the primary and standby."
+  }
+ },
+ {
+  "id": "ace-334",
+  "exam": "ACE",
+  "domain": 2,
+  "objective": "2.3",
+  "topic": "VPC ve ağ",
+  "difficulty": "zor",
+  "question": "Shared VPC ana projesinde (host project) 10 alt ağ var. 'analytics' servis projesinin yöneticisinin yalnızca 'analytics-subnet' alt ağında VM oluşturabilmesini istiyorsunuz. Ne yapmalısınız?",
+  "options": [
+   "Servis projesi yöneticisine compute.networkUser rolünü ana proje düzeyinde vermek ve diğer alt ağlarda firewall kuralıyla trafiği engellemek",
+   "analytics-subnet'i servis projesine taşımak; alt ağlar Shared VPC'de projeler arasında taşınabilir",
+   "Servis projesi yöneticisine compute.networkUser rolünü yalnızca analytics-subnet alt ağı düzeyinde vermek",
+   "Servis projesi yöneticisine ana projede Compute Network Admin rolü vermek"
+  ],
+  "correct": [
+   2
+  ],
+  "explanation": "Shared VPC yöneticisi, Network User rolünü tüm ana proje yerine yalnızca seçili alt ağlar için verebilir; alt ağ düzeyinde izni olan servis projesi yöneticisi yalnızca bu alt ağları kullanabilir. Proje düzeyinde verilen rol, gelecekte eklenecekler dahil tüm alt ağlara erişim sağlar.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/vpc/docs/shared-vpc",
+  "check": [
+   "a service project admin who only has subnet-level"
+  ],
+  "en": {
+   "question": "A Shared VPC host project has 10 subnets. You want the admin of the 'analytics' service project to be able to create VMs only in the 'analytics-subnet' subnet. What should you do?",
+   "options": [
+    "Grant the service project admin compute.networkUser at the host project level and block traffic in other subnets with firewall rules",
+    "Move analytics-subnet into the service project; subnets can be moved between projects in Shared VPC",
+    "Grant the service project admin the compute.networkUser role only at the level of the analytics-subnet subnet",
+    "Grant the service project admin the Compute Network Admin role in the host project"
+   ],
+   "explanation": "The Shared VPC Admin can grant the Network User role for selected subnets instead of the whole host project; a service project admin with only subnet-level permission can use only those subnets. A project-level grant gives access to all subnets, including future ones."
+  }
+ },
+ {
+  "id": "ace-335",
+  "exam": "ACE",
+  "domain": 2,
+  "objective": "2.3",
+  "topic": "VPC ve ağ",
+  "difficulty": "zor",
+  "question": "Şirket içi veri merkezindeki eski VPN cihazı BGP desteklemiyor ve yalnızca statik yönlendirmeyle çalışabiliyor. Cihaz değiştirilene kadar geçici bir IPsec bağlantısı gerekiyor. Hangi seçenek kullanılabilir ve SLA'sı nedir?",
+  "options": [
+   "HA VPN ile politika tabanlı yönlendirme; BGP gerekmez ve %99,99 SLA sunar",
+   "HA VPN ile statik rotalar; %99,99 SLA sunar",
+   "Dedicated Interconnect; BGP gerektirmez ve şifreli IPsec sağlar",
+   "Statik yönlendirmeyi destekleyen Classic VPN; %99,9 SLA sunar"
+  ],
+  "correct": [
+   3
+  ],
+  "explanation": "HA VPN yalnızca dinamik yönlendirmeyi (BGP) destekler ve çoğu topolojide %99,99 SLA sunar. Classic VPN statik yönlendirmeyi destekler ve %99,9 SLA sunar. Interconnect IPsec VPN değildir ve BGP kullanır.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/network-connectivity/docs/vpn/concepts/overview",
+  "check": [
+   "only dynamic routing",
+   "provides a 99.9% sla"
+  ],
+  "en": {
+   "question": "The legacy VPN device in your on-premises data center doesn't support BGP and can only use static routing. You need a temporary IPsec connection until the device is replaced. Which option can you use, and what is its SLA?",
+   "options": [
+    "HA VPN with policy-based routing; it needs no BGP and provides a 99.99% SLA",
+    "HA VPN with static routes; it provides a 99.99% SLA",
+    "Dedicated Interconnect; it doesn't require BGP and provides encrypted IPsec",
+    "Classic VPN, which supports static routing; it provides a 99.9% SLA"
+   ],
+   "explanation": "HA VPN supports only dynamic routing (BGP) and provides a 99.99% SLA for most topologies. Classic VPN supports static routing and provides a 99.9% SLA. Interconnect isn't an IPsec VPN and uses BGP."
+  }
+ },
+ {
+  "id": "ace-336",
+  "exam": "ACE",
+  "domain": 2,
+  "objective": "2.3",
+  "topic": "VPC ve ağ",
+  "difficulty": "zor",
+  "question": "Organizasyon düzeyinde hiyerarşik bir firewall politikası kullanıyorsunuz. Güvenlik ekibi bazı trafiğin kesin olarak engellenmesini, belirli bir trafik türü için ise kararın her projedeki VPC firewall kurallarına bırakılmasını istiyor. Hiyerarşik politikada bu trafik türü için hangi eylemi kullanmalısınız?",
+  "options": [
+   "goto_next",
+   "apply_security_profile_group",
+   "allow",
+   "deny"
+  ],
+  "correct": [
+   0
+  ],
+  "explanation": "Hiyerarşik firewall politikası kurallarında goto_next eylemi, eşleşen trafiğin değerlendirilmesini hiyerarşide bir sonraki seviyeye (alt klasör politikası veya VPC ağının kurallarına) devreder. allow ve deny değerlendirmeyi o noktada sonlandırır.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/firewall/docs/firewall-policies-rule-details",
+  "check": [
+   "goto_next stops evaluating other rules in the firewall policy, and evaluates rules in the next step"
+  ],
+  "en": {
+   "question": "You use a hierarchical firewall policy at the organization level. The security team wants some traffic blocked definitively, but for one specific type of traffic the decision should be left to the VPC firewall rules in each project. Which action should you use for that traffic in the hierarchical policy?",
+   "options": [
+    "goto_next",
+    "apply_security_profile_group",
+    "allow",
+    "deny"
+   ],
+   "explanation": "In hierarchical firewall policy rules, the goto_next action delegates evaluation of matching traffic to the next level of the hierarchy (a child folder policy or the VPC network's rules). allow and deny stop evaluation at that point."
+  }
+ },
+ {
+  "id": "ace-337",
+  "exam": "ACE",
+  "domain": 2,
+  "objective": "2.4",
+  "topic": "IaC ve DevOps",
+  "difficulty": "orta",
+  "question": "Ekip Terraform'u birden çok kişiyle kullanıyor ve state dosyası şu an bir geliştiricinin dizüstü bilgisayarında. Google'ın önerdiği şekilde state'i nerede ve nasıl saklamalısınız?",
+  "options": [
+   "State'i Secret Manager'da saklayıp terraform apply'dan önce elle indirmek",
+   "Object Versioning etkin bir Cloud Storage bucket'ında gcs backend ile",
+   "Her geliştiricinin kendi yerel state dosyasını kullanması ve haftalık birleştirme",
+   "State dosyasını Git deposuna commit edip her değişiklikten önce pull yapmak"
+  ],
+  "correct": [
+   1
+  ],
+  "explanation": "Terraform state'i uzak bir backend olarak Cloud Storage'da (gcs backend) saklanır; Google'ın örneğinde bucket'ta dağıtım geçmişini tutmak için Object Versioning açıktır ve eski state sürümlerini silmek için lifecycle yönetimi önerilir.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/docs/terraform/resource-management/store-state",
+  "check": [
+   "object versioning enabled to keep the history of your deployments"
+  ],
+  "en": {
+   "question": "The team uses Terraform with several people, and the state file currently lives on one developer's laptop. Where and how should you store the state, as Google recommends?",
+   "options": [
+    "Store the state in Secret Manager and download it manually before terraform apply",
+    "In a Cloud Storage bucket with Object Versioning enabled, using the gcs backend",
+    "Let each developer keep a local state file and merge them weekly",
+    "Commit the state file to the Git repository and pull before every change"
+   ],
+   "explanation": "Terraform state is stored remotely in Cloud Storage (the gcs backend); in Google's example the bucket has Object Versioning enabled to keep the history of deployments, and object lifecycle management is suggested to delete old state versions."
+  }
+ },
+ {
+  "id": "ace-338",
+  "exam": "ACE",
+  "domain": 3,
+  "objective": "3.1",
+  "topic": "Compute Engine",
+  "difficulty": "zor",
+  "question": "Bir VM'in kalıcı diskinin her gece 02:00'de otomatik olarak anlık görüntüsünün (snapshot) alınmasını ve 14 gün saklanmasını istiyorsunuz. gcloud ile doğru adımlar nelerdir?",
+  "options": [
+   "'resource-policies create snapshot-schedule', ardından 'disks add-resource-policies' çalıştırmak",
+   "gcloud compute snapshots create komutuna --schedule=daily --retention=14d bayraklarını eklemek",
+   "Cloud Scheduler ile her gece gcloud compute images create komutunu çalıştırmak; image'lar snapshot'ların yerini alır",
+   "gcloud compute instances set-scheduling ile VM'e günlük snapshot zamanlaması tanımlamak"
+  ],
+  "correct": [
+   0
+  ],
+  "explanation": "Planlı snapshot'lar bir kaynak politikası (resource policy) olarak oluşturulur: önce 'resource-policies create snapshot-schedule' ile zamanlama ve saklama süresi tanımlanır, sonra 'disks add-resource-policies' ile diske eklenir.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/compute/docs/disks/scheduled-snapshots",
+  "check": [
+   "resource-policies create snapshot-schedule",
+   "add-resource-policies"
+  ],
+  "en": {
+   "question": "You want a snapshot of a VM's persistent disk taken automatically every night at 02:00 and kept for 14 days. What are the correct gcloud steps?",
+   "options": [
+    "Run 'resource-policies create snapshot-schedule', then 'disks add-resource-policies'",
+    "Add the --schedule=daily --retention=14d flags to the gcloud compute snapshots create command",
+    "Run gcloud compute images create every night with Cloud Scheduler; images replace snapshots",
+    "Define a daily snapshot schedule on the VM with gcloud compute instances set-scheduling"
+   ],
+   "explanation": "Scheduled snapshots are created as a resource policy: first define the schedule and retention with 'resource-policies create snapshot-schedule', then attach it to the disk with 'disks add-resource-policies'."
+  }
+ },
+ {
+  "id": "ace-339",
+  "exam": "ACE",
+  "domain": 3,
+  "objective": "3.1",
+  "topic": "GKE (Kubernetes)",
+  "difficulty": "zor",
+  "question": "GKE Standard düğüm havuzunu yeni bir sürüme yükselteceksiniz. Yeni düğüm yapılandırmasında iş yükleri doğrulanana kadar eski düğümlerin geri dönüş (rollback) için hazır bekletilmesini istiyorsunuz; geçici olarak iki kat kaynak kullanmayı kabul ediyorsunuz. Hangi stratejiyi seçmelisiniz?",
+  "options": [
+   "Blue-green yükseltme",
+   "maxSurge=0, maxUnavailable=1 ile surge yükseltme",
+   "Düğüm havuzunda otomatik onarımı (auto-repair) kapatıp düğümleri elle yükseltmek",
+   "maxSurge=1, maxUnavailable=0 ile surge yükseltme"
+  ],
+  "correct": [
+   0
+  ],
+  "explanation": "Blue-green yükseltmede iş yükleri yeni düğüm yapılandırmasında doğrulanırken mevcut düğümler geri dönüş için kullanılabilir durumda tutulur. Surge yükseltmede maxSurge yeni düğüm sayısını, maxUnavailable aynı anda kesintiye uğrayabilecek düğüm sayısını belirler; eski düğümler bekletilmez.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/kubernetes-engine/docs/concepts/node-pool-upgrade-strategies",
+  "check": [
+   "existing nodes are kept available for rolling back while the workloads are validated on the new node configuration"
+  ],
+  "en": {
+   "question": "You're upgrading a GKE Standard node pool to a new version. You want the old nodes to stay available for rollback until workloads are validated on the new node configuration, and you accept temporarily using double the resources. Which strategy should you choose?",
+   "options": [
+    "Blue-green upgrade",
+    "Surge upgrade with maxSurge=0, maxUnavailable=1",
+    "Turn off auto-repair on the node pool and upgrade nodes manually",
+    "Surge upgrade with maxSurge=1, maxUnavailable=0"
+   ],
+   "explanation": "In a blue-green upgrade, existing nodes are kept available for rolling back while workloads are validated on the new node configuration. In a surge upgrade, maxSurge sets how many new nodes are created and maxUnavailable how many nodes can be disrupted at once; old nodes aren't kept."
+  }
+ },
+ {
+  "id": "ace-340",
+  "exam": "ACE",
+  "domain": 3,
+  "objective": "3.1",
+  "topic": "GKE (Kubernetes)",
+  "difficulty": "zor",
+  "question": "Bir GKE Deployment'ı CPU kullanımına göre çalışan Horizontal Pod Autoscaler (HPA) ile ölçekleniyor. Ekip, pod'ların CPU ve bellek isteklerini (requests) otomatik ayarlamak için aynı Deployment'a Vertical Pod Autoscaler (VPA) da eklemek istiyor. Google'ın belgelerine göre en uygun yaklaşım nedir?",
+  "options": [
+   "VPA'yı yalnızca 'Off' modunda kullanmak; diğer modlarda VPA ve HPA hiçbir koşulda birlikte kullanılamaz",
+   "İkisini de CPU'ya göre aynı anda çalıştırmak; GKE çakışmaları otomatik çözer",
+   "HPA'yı kaldırıp yalnızca VPA kullanmak; VPA ani trafik artışlarında replika sayısını da artırır",
+   "HPA'yı CPU yerine özel veya harici bir metriğe (ör. saniyedeki istek) göre çalıştırmak"
+  ],
+  "correct": [
+   3
+  ],
+  "explanation": "VPA'yı CPU'ya göre çalışan HPA ile kullanmak için HPA rightsizing (önizleme) veya multidimensional pod autoscaling gerekir; VPA, özel ve harici metriklere dayalı HPA ile birlikte kullanılabilir. VPA replika sayısını değil istekleri ayarlar; ani artışlar için HPA önerilir.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/kubernetes-engine/docs/concepts/verticalpodautoscaler",
+  "check": [
+   "you can also use vertical pod autoscaling with horizontal pod autoscaling on custom and external metrics"
+  ],
+  "en": {
+   "question": "A GKE Deployment is scaled by a Horizontal Pod Autoscaler (HPA) based on CPU usage. The team also wants to add a Vertical Pod Autoscaler (VPA) to the same Deployment to tune the Pods' CPU and memory requests automatically. According to Google's documentation, what is the best approach?",
+   "options": [
+    "Use the VPA only in 'Off' mode; in other modes VPA and HPA can never be used together",
+    "Run both on CPU at the same time; GKE resolves the conflicts automatically",
+    "Remove the HPA and use only the VPA; VPA also increases the replica count during traffic spikes",
+    "Scale the HPA on a custom or external metric (e.g. requests per second) instead of CPU"
+   ],
+   "explanation": "To use VPA with an HPA on CPU, you need HPA rightsizing (Preview) or multidimensional Pod autoscaling; VPA can be used with an HPA on custom and external metrics. VPA adjusts requests, not replica counts; HPA is recommended for sudden spikes."
+  }
+ },
+ {
+  "id": "ace-341",
+  "exam": "ACE",
+  "domain": 3,
+  "objective": "3.1",
+  "topic": "Serverless (Cloud Run, Functions, App Engine)",
+  "difficulty": "zor",
+  "question": "Bir Cloud Run servisinin yeni sürümünü üretim trafiğine açmadan önce, kendi URL'si üzerinden test etmek istiyorsunuz. Hangi komut bunu sağlar?",
+  "options": [
+   "gcloud run services update-traffic SERVIS --to-latest",
+   "gcloud run deploy SERVIS --image IMAJ --no-traffic --tag test",
+   "gcloud run deploy SERVIS-test --image IMAJ ile ayrı bir servis oluşturup trafiğin %50'sini ona yönlendirmek",
+   "gcloud run deploy SERVIS --image IMAJ --traffic=0"
+  ],
+  "correct": [
+   1
+  ],
+  "explanation": "--no-traffic yeni revizyona trafik gönderilmesini engeller; --tag ise revizyona, trafik almadan doğrudan test edebileceğiniz etiket adıyla başlayan ayrı bir URL verir. Test sonrası update-traffic ile kademeli geçiş yapılabilir.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/run/docs/rollouts-rollbacks-traffic-migration",
+  "check": [
+   "the tag lets you directly test the new revision at a specific url, without serving traffic"
+  ],
+  "en": {
+   "question": "Before exposing a new version of a Cloud Run service to production traffic, you want to test it at its own URL. Which command does this?",
+   "options": [
+    "gcloud run services update-traffic SERVICE --to-latest",
+    "gcloud run deploy SERVICE --image IMAGE --no-traffic --tag test",
+    "Create a separate service with gcloud run deploy SERVICE-test --image IMAGE and send 50% of traffic to it",
+    "gcloud run deploy SERVICE --image IMAGE --traffic=0"
+   ],
+   "explanation": "--no-traffic prevents traffic from going to the new revision; --tag gives the revision a separate URL starting with the tag name, so you can test it directly without serving traffic. After testing, migrate gradually with update-traffic."
+  }
+ },
+ {
+  "id": "ace-342",
+  "exam": "ACE",
+  "domain": 3,
+  "objective": "3.1",
+  "topic": "GKE (Kubernetes)",
+  "difficulty": "zor",
+  "question": "'ci-proj' projesindeki Artifact Registry deposundan, 'prod-proj' projesindeki GKE kümesinin imaj çekmesi gerekiyor. Düğümler şu an Compute Engine varsayılan servis hesabını kullanıyor. Google'ın önerisine uygun çözüm nedir?",
+  "options": [
+   "Düğümlerin erişim kapsamını (access scope) cloud-platform yapmak; kapsam projeler arası çekme için yeterlidir",
+   "Düğümlere, depoda Artifact Registry Reader rolü olan kendi servis hesabınızı vermek",
+   "Depoyu herkese açık (allUsers) yapmak; GKE özel depolardan projeler arası imaj çekemez",
+   "İmajları her dağıtımda ci-proj'dan indirip prod-proj'daki bir Cloud Storage bucket'ına kopyalamak"
+  ],
+  "correct": [
+   1
+  ],
+  "explanation": "Varsayılan ayarlarla GKE aynı projedeki depolardan imaj çekebilir. Projeler arası çekme veya gönderme için Google, kullanıcı tarafından sağlanan bir servis hesabı kullanmayı ve ona depoda gerekli Artifact Registry rolünü (Reader) vermeyi önerir.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/artifact-registry/docs/integrate-gke",
+  "check": [
+   "pull or push images across projects, use a user-provided service account"
+  ],
+  "en": {
+   "question": "A GKE cluster in the 'prod-proj' project needs to pull images from an Artifact Registry repository in the 'ci-proj' project. The nodes currently use the Compute Engine default service account. What is the solution that follows Google's recommendation?",
+   "options": [
+    "Set the nodes' access scope to cloud-platform; the scope is enough for cross-project pulls",
+    "Give the nodes a user-provided service account with Artifact Registry Reader on the repository",
+    "Make the repository public (allUsers); GKE can't pull private images across projects",
+    "Download the images from ci-proj on every deployment and copy them to a Cloud Storage bucket in prod-proj"
+   ],
+   "explanation": "With the default settings, GKE can pull images from repositories in the same project. To pull or push images across projects, Google recommends using a user-provided service account and granting it the needed Artifact Registry role (Reader) on the repository."
+  }
+ },
+ {
+  "id": "ace-343",
+  "exam": "ACE",
+  "domain": 3,
+  "objective": "3.1",
+  "topic": "Compute Engine",
+  "difficulty": "zor",
+  "question": "Çalışan bir VM'e GPU eklemeniz gerekiyor. Hangi adımlar gereklidir?",
+  "options": [
+   "Bakım davranışını MIGRATE olarak bırakıp yalnızca automaticRestart'ı kapatmak",
+   "VM'i durdurmadan makine tipini değiştirmek; GPU otomatik olarak eklenir",
+   "VM'i durdurmak, bakım davranışını (onHostMaintenance) TERMINATE yapmak, GPU'yu ekleyip VM'i yeniden başlatmak",
+   "VM çalışırken GPU eklemek; GPU'lu VM'ler canlı taşıma (live migration) ile kesintisiz yükseltilir"
+  ],
+  "correct": [
+   2
+  ],
+  "explanation": "GPU'lu VM'ler canlı taşınamaz; bu nedenle ana makine bakımında davranış TERMINATE olmalıdır. GPU eklemek veya değiştirmek için VM durdurulur, yapılandırma değiştirilir ve VM yeniden başlatılır.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/compute/docs/gpus/add-remove-gpus",
+  "check": [
+   "instances with attached gpus can't live migrate"
+  ],
+  "en": {
+   "question": "You need to add a GPU to a running VM. Which steps are required?",
+   "options": [
+    "Leave the maintenance behavior as MIGRATE and only turn off automaticRestart",
+    "Change the machine type without stopping the VM; the GPU is added automatically",
+    "Stop the VM, set the host maintenance behavior (onHostMaintenance) to TERMINATE, add the GPU and start the VM again",
+    "Add the GPU while the VM is running; VMs with GPUs are upgraded without interruption by using live migration"
+   ],
+   "explanation": "VMs with attached GPUs can't live migrate, so their host maintenance behavior must be TERMINATE. To add or modify GPUs, you stop the VM, change its configuration and start it again."
+  }
+ },
+ {
+  "id": "ace-344",
+  "exam": "ACE",
+  "domain": 3,
+  "objective": "3.2",
+  "topic": "Cloud Storage",
+  "difficulty": "zor",
+  "question": "Object Versioning etkin bir bucket'ta depolama maliyeti hızla artıyor çünkü sık güncellenen nesnelerin çok sayıda eski sürümü birikiyor. Her nesnenin canlı sürümüne ek olarak yalnızca en yeni 3 eski sürümü saklamak istiyorsunuz. Hangi lifecycle koşulunu kullanırsınız?",
+  "options": [
+   "Delete eylemiyle isLive: true ve numNewerVersions: 3 koşulu",
+   "SetStorageClass eylemiyle isLive: false koşulu",
+   "Delete eylemiyle age: 3 koşulu",
+   "Delete eylemiyle numNewerVersions: 3 koşulu"
+  ],
+  "correct": [
+   3
+  ],
+  "explanation": "numNewerVersions koşulu, bir nesne sürümünden daha yeni en az N sürüm olduğunda karşılanır; Delete ile birlikte en yeni N eski sürüm dışındakiler silinir. age tüm nesneleri yaşa göre siler; isLive: true canlı sürümleri hedefler.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/storage/docs/lifecycle",
+  "check": [
+   "numnewerversions",
+   "noncurrent"
+  ],
+  "en": {
+   "question": "In a bucket with Object Versioning enabled, storage costs are rising quickly because many noncurrent versions of frequently updated objects pile up. In addition to each object's live version, you want to keep only the 3 newest noncurrent versions. Which lifecycle condition do you use?",
+   "options": [
+    "A Delete action with isLive: true and numNewerVersions: 3",
+    "A SetStorageClass action with the isLive: false condition",
+    "A Delete action with the age: 3 condition",
+    "A Delete action with the numNewerVersions: 3 condition"
+   ],
+   "explanation": "The numNewerVersions condition is met when there are at least N newer versions of an object version; combined with Delete, it removes all but the N newest noncurrent versions. age deletes all objects by age; isLive: true targets live versions."
+  }
+ },
+ {
+  "id": "ace-345",
+  "exam": "ACE",
+  "domain": 3,
+  "objective": "3.2",
+  "topic": "Veritabanları",
+  "difficulty": "zor",
+  "question": "Firestore'da bir hatalı dağıtım 2 saat önce birçok belgeyi yanlış verilerle güncelledi. Point-in-time recovery (PITR) önceden etkinleştirilmişti. Hangi ifade doğrudur?",
+  "options": [
+   "7 güne kadar önceki veriler, tam dakika zaman damgasıyla okunabilir",
+   "PITR verileri 35 gün saklanır ve saniye hassasiyetinde okunabilir",
+   "PITR yalnızca planlı yedeklerin alındığı anlara dönebilir; ara zamanlara dönülemez",
+   "PITR yeni etkinleştirildiyse hemen 7 gün öncesinden okuma yapılabilir"
+  ],
+  "correct": [
+   0
+  ],
+  "explanation": "Firestore PITR, verileri 7 günlük pencerede saklar ve dakika hassasiyetinde (tam dakika zaman damgası) okuma yapmanıza izin verir. PITR'yi etkinleştirdikten hemen sonra 7 gün öncesinden okuma yapamazsınız; pencere etkinleştirme anından itibaren dolar.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/firestore/docs/pitr",
+  "check": [
+   "pitr data is retained for 7 days in the pitr window"
+  ],
+  "en": {
+   "question": "In Firestore, a bad deployment updated many documents with wrong data 2 hours ago. Point-in-time recovery (PITR) was already enabled. Which statement is true?",
+   "options": [
+    "Data from up to 7 days ago can be read, using a whole-minute timestamp",
+    "PITR data is retained for 35 days and can be read with per-second precision",
+    "PITR can only return to the moments when scheduled backups were taken, not to times in between",
+    "If PITR was just enabled, you can immediately read data from 7 days ago"
+   ],
+   "explanation": "Firestore PITR retains data in a 7-day window and lets you read at minute granularity using a whole-minute timestamp. You can't read from 7 days in the past immediately after enabling PITR; the window fills from the moment it's enabled."
+  }
+ },
+ {
+  "id": "ace-346",
+  "exam": "ACE",
+  "domain": 3,
+  "objective": "3.2",
+  "topic": "Veri ve analitik",
+  "difficulty": "zor",
+  "question": "Pub/Sub'dan okuyan bir Dataflow akış (streaming) işini yeni bir sürümle değiştirmek için durduracaksınız. Arabellekteki (buffered) verilerin kaybolmamasını istiyorsunuz. Ne yapmalısınız?",
+  "options": [
+   "İşi force cancel etmek; en hızlı ve veri kaybı olmayan yöntem budur",
+   "İşi cancel etmek; cancel arabellekteki verileri bitirip sonra durur",
+   "İşi drain etmek; yeni veri almayı durdurur ve arabellekteki verileri işlemeyi bitirir",
+   "Pub/Sub aboneliğini silmek; Dataflow kalan veriyi bitirip kendiliğinden kapanır"
+  ],
+  "correct": [
+   2
+  ],
+  "explanation": "Drain yalnızca akış işlerinde kullanılır: yeni veri almayı durdurur ve arabellekteki verilerin işlenmesini tamamlar; veri kaybını önlemek için en iyi seçenektir. Cancel ve force cancel, arabellekteki veriler dahil işlemeyi durdurur.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/dataflow/docs/guides/stopping-a-pipeline",
+  "check": [
+   "draining a job enables the dataflow service to finish processing the buffered data"
+  ],
+  "en": {
+   "question": "You're going to stop a Dataflow streaming job that reads from Pub/Sub so you can replace it with a new version. You don't want to lose buffered data. What should you do?",
+   "options": [
+    "Force cancel the job; it's the fastest method and has no data loss",
+    "Cancel the job; cancel finishes the buffered data before stopping",
+    "Drain the job; it stops ingesting new data and finishes processing the buffered data",
+    "Delete the Pub/Sub subscription; Dataflow finishes the remaining data and shuts down by itself"
+   ],
+   "explanation": "Drain applies only to streaming pipelines: it stops ingesting new data and finishes processing the buffered data, and it's the best option to prevent data loss. Cancel and force cancel stop processing, including buffered data."
+  }
+ },
+ {
+  "id": "ace-347",
+  "exam": "ACE",
+  "domain": 3,
+  "objective": "3.3",
+  "topic": "VPC ve ağ",
+  "difficulty": "zor",
+  "question": "Tüm internete giden trafiği bir güvenlik duvarı VM'i (NVA) üzerinden geçirmek için hedefi 0.0.0.0/0 ve sonraki atlaması (next hop) bu VM olan özel bir statik rota oluşturdunuz. Rota doğru görünüyor ama paketler VM'den öteye gitmiyor. En olası eksik nedir?",
+  "options": [
+   "Cloud Router eksikliği; statik rotalar ancak Cloud Router varsa uygulanır",
+   "VM'in harici IP'sinin olmaması; next hop VM'lerin harici IP'si olmalıdır",
+   "VM'de IP yönlendirme (can-ip-forward) etkin değil",
+   "Rotanın önceliğinin 0 yerine 1000 olması; özel rotalar yalnızca öncelik 0 ile çalışır"
+  ],
+  "correct": [
+   2
+  ],
+  "explanation": "Bir VM'in rotada next hop olarak kullanılabilmesi için başka kaynaklardan gelen paketleri iletmesi gerekir; bunun için IP yönlendirme (can-ip-forward) VM başına, oluşturma sırasında açılır (MIG için instance template'te). Ayrıca işletim sisteminde yönlendirme yapılandırılmalıdır.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/vpc/docs/using-routes",
+  "check": [
+   "to use a vm as a next hop for a route, the vm needs to forward packets"
+  ],
+  "en": {
+   "question": "To send all internet-bound traffic through a firewall VM (NVA), you created a custom static route with destination 0.0.0.0/0 and this VM as the next hop. The route looks right, but packets don't go beyond the VM. What is the most likely missing piece?",
+   "options": [
+    "There's no Cloud Router; static routes are only applied when a Cloud Router exists",
+    "The VM has no external IP; next hop VMs must have an external IP",
+    "IP forwarding (can-ip-forward) isn't enabled on the VM",
+    "The route's priority is 1000 instead of 0; custom routes only work with priority 0"
+   ],
+   "explanation": "For a VM to be a route's next hop, it must forward packets from other sources; this requires IP forwarding (can-ip-forward), enabled per VM when it's created (or in the instance template for a MIG). Routing must also be configured in the operating system."
+  }
+ },
+ {
+  "id": "ace-348",
+  "exam": "ACE",
+  "domain": 3,
+  "objective": "3.3",
+  "topic": "VPC ve ağ",
+  "difficulty": "zor",
+  "question": "VPC'deki VM'lerin corp.example.com adlarını şirket içi DNS sunucularından çözmesi için Cloud DNS'te bir forwarding zone oluşturdunuz. Bağlantı Cloud VPN üzerinden. Şirket içi DNS sunucuları sorguları hiç görmüyor. Şirket içi güvenlik duvarında ve rotalarda hangi kaynak aralığına izin verilmelidir?",
+  "options": [
+   "35.199.192.0/19",
+   "VM'lerin bulunduğu alt ağın aralığı",
+   "169.254.169.254/32",
+   "130.211.0.0/22"
+  ],
+  "correct": [
+   0
+  ],
+  "explanation": "Cloud DNS, forwarding sorgularında tüm müşteriler için 35.199.192.0/19 kaynak aralığını kullanır; bu aralık yalnızca bir VPC'den veya VPC'ye bağlı şirket içi ağdan erişilebilir. Şirket içi güvenlik duvarı ve rotalar bu aralığa izin vermelidir. 130.211.0.0/22 sağlık kontrolü aralıklarındandır.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/dns/docs/zones/forwarding-zones",
+  "check": [
+   "cloud dns uses the 35.199.192.0/19 source range for all customers"
+  ],
+  "en": {
+   "question": "You created a forwarding zone in Cloud DNS so that VMs in the VPC resolve corp.example.com names from on-premises DNS servers. Connectivity is over Cloud VPN. The on-premises DNS servers never see the queries. Which source range must be allowed in the on-premises firewall and routes?",
+   "options": [
+    "35.199.192.0/19",
+    "The range of the subnet where the VMs are",
+    "169.254.169.254/32",
+    "130.211.0.0/22"
+   ],
+   "explanation": "Cloud DNS uses the 35.199.192.0/19 source range for forwarded queries for all customers; this range is only reachable from a VPC network or an on-premises network connected to a VPC network. On-premises firewalls and routes must allow it. 130.211.0.0/22 is one of the health check ranges."
+  }
+ },
+ {
+  "id": "ace-349",
+  "exam": "ACE",
+  "domain": 3,
+  "objective": "3.3",
+  "topic": "VPC ve ağ",
+  "difficulty": "orta",
+  "question": "Bir VM'in geçici (ephemeral) harici IP adresi müşterilerin firewall'larında izin listesine eklenmiş. VM silinse bile bu adresin korunmasını istiyorsunuz. Ne yapmalısınız?",
+  "options": [
+   "VM'i durdurmak; durdurulan VM'in geçici IP'si kalıcı olarak saklanır",
+   "Mevcut geçici harici IP adresini statik harici IP adresine yükseltmek (promote)",
+   "VM'e Cloud NAT eklemek; NAT IP'si VM'in harici IP'siyle aynı kalır",
+   "Yeni bir statik IP ayırıp müşterilerden izin listesini güncellemelerini istemek; geçici adresler statik yapılamaz"
+  ],
+  "correct": [
+   1
+  ],
+  "explanation": "Mevcut bir geçici harici IP adresi statik harici IP adresine yükseltilebilir; böylece adres kaynak silindikten sonra bile ayrılmış olarak kalır. VM durdurulduğunda geçici IP serbest bırakılabilir.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/compute/docs/ip-addresses/reserve-static-external-ip-address",
+  "check": [
+   "promote existing ephemeral external ip addresses"
+  ],
+  "en": {
+   "question": "A VM's ephemeral external IP address has been added to customers' firewall allowlists. You want to keep this address even if the VM is deleted. What should you do?",
+   "options": [
+    "Stop the VM; a stopped VM's ephemeral IP is kept permanently",
+    "Promote the existing ephemeral external IP address to a static external IP address",
+    "Add Cloud NAT to the VM; the NAT IP stays the same as the VM's external IP",
+    "Reserve a new static IP and ask customers to update their allowlists; ephemeral addresses can't be made static"
+   ],
+   "explanation": "An existing ephemeral external IP address can be promoted to a static external IP address, so the address stays reserved even after the resource is deleted. When a VM is stopped, its ephemeral IP can be released."
+  }
+ },
+ {
+  "id": "ace-350",
+  "exam": "ACE",
+  "domain": 3,
+  "objective": "3.3",
+  "topic": "VPC ve ağ",
+  "difficulty": "orta",
+  "question": "Bir veritabanı VM'inin dahili IP adresinin (10.10.0.50) VM silinip yeniden oluşturulsa bile aynı kalmasını istiyorsunuz. Hangi komutla adresi ayırırsınız?",
+  "options": [
+   "gcloud compute networks subnets update SUBNET --reserve=10.10.0.50",
+   "gcloud compute addresses create db-ip --region=REGION --subnet=SUBNET --addresses=10.10.0.50",
+   "gcloud compute addresses create db-ip --global --addresses=10.10.0.50",
+   "gcloud compute instances update VM --zone=ZONE --internal-ip=static --keep-address"
+  ],
+  "correct": [
+   1
+  ],
+  "explanation": "Statik dahili IP adresi bölgesel bir kaynaktır ve bir alt ağdan ayrılır: 'addresses create' komutuna --region, --subnet ve istenen adres için --addresses verilir. --global harici adresler (ör. global yük dengeleyici) içindir.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/compute/docs/ip-addresses/reserve-static-internal-ip-address",
+  "check": [
+   "addresses create",
+   "--subnet"
+  ],
+  "en": {
+   "question": "You want a database VM's internal IP address (10.10.0.50) to stay the same even if the VM is deleted and recreated. Which command reserves the address?",
+   "options": [
+    "gcloud compute networks subnets update SUBNET --reserve=10.10.0.50",
+    "gcloud compute addresses create db-ip --region=REGION --subnet=SUBNET --addresses=10.10.0.50",
+    "gcloud compute addresses create db-ip --global --addresses=10.10.0.50",
+    "gcloud compute instances update VM --zone=ZONE --internal-ip=static --keep-address"
+   ],
+   "explanation": "A static internal IP address is a regional resource reserved from a subnet: pass --region, --subnet and --addresses for the specific address to 'addresses create'. --global is for external addresses (e.g. a global load balancer)."
+  }
+ },
+ {
+  "id": "ace-351",
+  "exam": "ACE",
+  "domain": 3,
+  "objective": "3.4",
+  "topic": "Logging ve Monitoring",
+  "difficulty": "zor",
+  "question": "Organizasyondaki tüm denetim kayıtlarını merkezi bir güvenlik projesine yönlendirmek ve bu kayıtların alt projelerdeki sink'ler tarafından başka yerlere de kopyalanmasını engellemek istiyorsunuz. Hangi yapılandırma bunu sağlar?",
+  "options": [
+   "Organizasyon düzeyinde intercepting (araya giren) bir aggregated sink",
+   "Her projede _Required sink'in hedefini güvenlik projesine değiştirmek",
+   "Her projede ayrı bir sink ve projelerdeki _Default sink'lerin silinmesi",
+   "Organizasyon düzeyinde yalnızca --include-children ile oluşturulan non-intercepting bir aggregated sink"
+  ],
+  "correct": [
+   0
+  ],
+  "explanation": "Intercepting aggregated sink, eşleşen kayıtları hedefine yönlendirir ve bu kayıtlar alt kaynaklardaki sink'lere gönderilmez; tek istisna, kaydın oluştuğu kaynaktaki _Required sink'tir. Non-intercepting sink'te kayıtlar alt kaynakların sink'lerine de gider. _Required sink değiştirilemez.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/logging/docs/routing/overview",
+  "check": [
+   "the log entry isn't sent to the sinks in child resources, with the exception that the log entry is always sent to the _required log sink"
+  ],
+  "en": {
+   "question": "You want to route all audit logs in the organization to a central security project and prevent those logs from also being copied elsewhere by sinks in child projects. Which configuration does this?",
+   "options": [
+    "An intercepting aggregated sink at the organization level",
+    "Changing the destination of the _Required sink in every project to the security project",
+    "A separate sink in every project, and deleting the _Default sinks in the projects",
+    "A non-intercepting aggregated sink at the organization level, created with only --include-children"
+   ],
+   "explanation": "An intercepting aggregated sink routes matching logs to its destination, and those logs aren't sent to sinks in child resources, except the _Required sink in the resource where the log originates. With a non-intercepting sink, logs also go to child resources' sinks. The _Required sink can't be changed."
+  }
+ },
+ {
+  "id": "ace-352",
+  "exam": "ACE",
+  "domain": 3,
+  "objective": "3.4",
+  "topic": "Logging ve Monitoring",
+  "difficulty": "zor",
+  "question": "Uygulama kayıtlarındaki 'payment failed' mesajları için bugün kullanıcı tanımlı bir log tabanlı sayaç metriği oluşturdunuz ve son 30 günün hatalarını gösteren bir grafik çizmek istiyorsunuz. Grafikte ne görürsünüz?",
+  "options": [
+   "Kayıtlar log bucket'ta tutulduğu için son 30 günün tamamı",
+   "Metrik ilk 24 saat boyunca hiç veri göstermez, sonra son 30 gün doldurulur",
+   "_Default bucket'ın saklama süresi olan son 30 günün tamamı, ancak yalnızca ERROR seviyesindeki kayıtlar",
+   "Yalnızca metrik oluşturulduktan sonra gelen kayıtların verisi"
+  ],
+  "correct": [
+   3
+  ],
+  "explanation": "Kullanıcı tanımlı log tabanlı metriklerin verisi yalnızca metrik oluşturulduktan sonra alınan kayıtlardan gelir; metrik geriye dönük doldurulmaz. Geçmiş kayıtları analiz etmek için Logs Explorer veya Log Analytics kullanılabilir.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/logging/docs/logs-based-metrics",
+  "check": [
+   "the data for a user-defined log-based metric comes only from log entries received after the metric is created"
+  ],
+  "en": {
+   "question": "Today you created a user-defined log-based counter metric for 'payment failed' messages in application logs, and you want to chart failures for the last 30 days. What will you see in the chart?",
+   "options": [
+    "All of the last 30 days, because the logs are kept in the log bucket",
+    "The metric shows no data for the first 24 hours, then backfills the last 30 days",
+    "All of the last 30 days (the _Default bucket's retention), but only for ERROR-level entries",
+    "Only data from entries received after the metric was created"
+   ],
+   "explanation": "The data for a user-defined log-based metric comes only from log entries received after the metric is created; the metric isn't populated retroactively. To analyze past logs, use Logs Explorer or Log Analytics."
+  }
+ },
+ {
+  "id": "ace-353",
+  "exam": "ACE",
+  "domain": 3,
+  "objective": "3.4",
+  "topic": "Logging ve Monitoring",
+  "difficulty": "orta",
+  "question": "Uygulama, her isteğin işlem süresini bir kayıt alanında (latency_ms) yazıyor. Bu kayıtlardan 95. yüzdelik gecikmeyi izleyip bunun için uyarı oluşturmak istiyorsunuz. Hangi tür log tabanlı metrik kullanmalısınız?",
+  "options": [
+   "Kaydın eşleşip eşleşmediğini gösteren bir boolean metrik",
+   "Değeri latency_ms alanından çıkaran bir distribution (dağılım) metriği",
+   "Eşleşen kayıtları sayan bir counter (sayaç) metriği",
+   "Sistem tanımlı byte_count metriği, latency_ms alanına göre filtrelenmiş"
+  ],
+  "correct": [
+   1
+  ],
+  "explanation": "Distribution metrikleri, kayıtlardan çıkarılan sayısal değerlerin dağılımını tutar; böylece yüzdelikler (ör. 95. yüzdelik) hesaplanıp uyarı oluşturulabilir. Counter metrikleri yalnızca eşleşen kayıtları sayar.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/logging/docs/logs-based-metrics",
+  "check": [
+   "counter or distribution metric types"
+  ],
+  "en": {
+   "question": "The application writes each request's processing time in a log field (latency_ms). You want to track the 95th percentile latency from these logs and alert on it. Which kind of log-based metric should you use?",
+   "options": [
+    "A boolean metric showing whether an entry matched",
+    "A distribution metric that extracts its value from the latency_ms field",
+    "A counter metric that counts the matching entries",
+    "The system-defined byte_count metric, filtered on latency_ms"
+   ],
+   "explanation": "Distribution metrics record the distribution of numeric values extracted from logs, so percentiles (such as the 95th) can be computed and alerted on. Counter metrics only count matching entries."
+  }
+ },
+ {
+  "id": "ace-354",
+  "exam": "ACE",
+  "domain": 3,
+  "objective": "3.4",
+  "topic": "Logging ve Monitoring",
+  "difficulty": "zor",
+  "question": "Bir GKE kümesinde Google Cloud Managed Service for Prometheus'un yönetilen toplama (managed collection) özelliğini etkinleştirdiniz, ancak uygulamanızın /metrics uç noktasındaki özel metrikler Cloud Monitoring'de görünmüyor. Ne eksik?",
+  "options": [
+   "Uygulamanın metrik uç noktasını hedefleyen bir PodMonitoring (veya ClusterPodMonitoring) kaynağı",
+   "Her düğüme Ops Agent kurulması; yönetilen toplama Ops Agent olmadan çalışmaz",
+   "Prometheus sunucusunu kümeye Helm ile ayrıca kurmak; yönetilen toplama yalnızca sistem metriklerini toplar",
+   "Uygulamanın metrikleri bir log sink ile BigQuery'ye göndermesi"
+  ],
+  "correct": [
+   0
+  ],
+  "explanation": "Yönetilen toplama etkinleştirildiğinde küme içi bileşenler çalışır ama henüz metrik üretilmez; metrik uç noktalarını kazımak (scrape) için PodMonitoring veya ClusterPodMonitoring özel kaynakları gerekir.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/stackdriver/docs/managed-prometheus/setup-managed",
+  "check": [
+   "podmonitoring or clusterpodmonitoring resources are needed"
+  ],
+  "en": {
+   "question": "You enabled managed collection for Google Cloud Managed Service for Prometheus in a GKE cluster, but your application's custom metrics on its /metrics endpoint don't appear in Cloud Monitoring. What is missing?",
+   "options": [
+    "A PodMonitoring (or ClusterPodMonitoring) resource targeting the application's metrics endpoint",
+    "Installing the Ops Agent on every node; managed collection doesn't work without the Ops Agent",
+    "Installing a Prometheus server in the cluster separately with Helm; managed collection only gathers system metrics",
+    "The application sending its metrics to BigQuery through a log sink"
+   ],
+   "explanation": "After managed collection is enabled, the in-cluster components run but no metrics are generated yet; PodMonitoring or ClusterPodMonitoring custom resources are needed to scrape the metrics endpoints."
+  }
+ },
+ {
+  "id": "ace-355",
+  "exam": "ACE",
+  "domain": 3,
+  "objective": "3.2",
+  "topic": "Veri ve analitik",
+  "difficulty": "orta",
+  "question": "Bir analistin BigQuery'de başlattığı uzun süren bir sorgu işinin (job) durumunu, işlenen bayt miktarını ve süresini komut satırından görmek istiyorsunuz. İş kimliğini biliyorsunuz. Hangi komutu kullanırsınız?",
+  "options": [
+   "bq query --dry_run PROJE:KONUM.IS_KIMLIGI",
+   "bq show --job=true PROJE:KONUM.IS_KIMLIGI",
+   "bq ls --jobs=true --all=true PROJE:KONUM.IS_KIMLIGI",
+   "bq cancel --nosync=true PROJE:KONUM.IS_KIMLIGI"
+  ],
+  "correct": [
+   1
+  ],
+  "explanation": "bq show --job=true, belirli bir işin türünü, durumunu, süresini ve işlenen/faturalanan baytları gösterir. bq ls -j işleri listeler, --dry_run bir sorgunun maliyetini tahmin eder, bq cancel ise işi iptal eder.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/bigquery/docs/managing-jobs",
+  "check": [
+   "bq show --job=true"
+  ],
+  "en": {
+   "question": "You want to see the state, bytes processed and duration of a long-running BigQuery query job that an analyst started, from the command line. You know the job ID. Which command do you use?",
+   "options": [
+    "bq query --dry_run PROJECT:LOCATION.JOB_ID",
+    "bq show --job=true PROJECT:LOCATION.JOB_ID",
+    "bq ls --jobs=true --all=true PROJECT:LOCATION.JOB_ID",
+    "bq cancel --nosync=true PROJECT:LOCATION.JOB_ID"
+   ],
+   "explanation": "bq show --job=true shows a specific job's type, state, duration and bytes processed/billed. bq ls -j lists jobs, --dry_run estimates a query's cost, and bq cancel cancels a job."
+  }
+ },
+ {
+  "id": "ace-356",
+  "exam": "ACE",
+  "domain": 1,
+  "objective": "1.2",
+  "topic": "Kaynak hiyerarşisi ve faturalandırma",
+  "difficulty": "orta",
+  "question": "Finans ekibinin faturalandırma hesabındaki maliyet ve ödeme bilgilerini görmesi gerekiyor, ancak projeleri hesaba bağlayıp ayıramamaları ya da hesap ayarlarını değiştirememeleri gerekiyor. Hangi rolü vermelisiniz?",
+  "options": [
+   "Project Billing Manager (roles/billing.projectManager)",
+   "Billing Account Viewer (roles/billing.viewer)",
+   "Billing Account User (roles/billing.user)",
+   "Billing Account Administrator (roles/billing.admin)"
+  ],
+  "correct": [
+   1
+  ],
+  "explanation": "Billing Account Viewer, maliyet ve ödeme bilgilerine salt okunur erişim verir ve genellikle finans ekiplerine verilir; projeleri bağlama/ayırma veya hesabı yönetme izni vermez. Billing Account User projeleri hesaba bağlamaya izin verir.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/billing/docs/how-to/billing-access",
+  "check": [
+   "billing account viewer access is usually granted to finance teams"
+  ],
+  "en": {
+   "question": "The finance team needs to see cost and payment information on the billing account, but must not be able to link or unlink projects or change the account's settings. Which role should you grant?",
+   "options": [
+    "Project Billing Manager (roles/billing.projectManager)",
+    "Billing Account Viewer (roles/billing.viewer)",
+    "Billing Account User (roles/billing.user)",
+    "Billing Account Administrator (roles/billing.admin)"
+   ],
+   "explanation": "Billing Account Viewer gives read access to cost and payment information and is usually granted to finance teams; it doesn't confer the right to link or unlink projects or manage the account. Billing Account User allows linking projects to the account."
+  }
+ },
+ {
+  "id": "ace-357",
+  "exam": "ACE",
+  "domain": 4,
+  "objective": "4.1",
+  "topic": "IAM ve servis hesapları",
+  "difficulty": "zor",
+  "question": "Bir otomasyon betiği, koşullu rol bağlamaları (IAM Conditions) içeren bir proje politikasını okuyup yeni bir üye ekleyerek geri yazıyor. Betik politika sürümü belirtmeden okuyor. Google'ın önerisi nedir?",
+  "options": [
+   "etag alanını kaldırmak; etag yalnızca aynı politikaya yapılan eşzamanlı yazmaları yavaşlatır",
+   "Politikayı her zaman sürüm 3 olarak istemek ve yazarken etag alanını dahil etmek",
+   "Politikayı her seferinde boş bir politikayla değiştirip tüm bağlamaları yeniden eklemek",
+   "Sürüm 1 istemek; sürüm 1 koşulları da içerir ve daha uyumludur"
+  ],
+  "correct": [
+   1
+  ],
+  "explanation": "Koşul içeren bir politika sürüm belirtilmeden veya sürüm 1 olarak okunursa koşullar gösterilmez ve bu temsil ile güncelleme yapmak hatalara yol açar. Google, IAM Conditions kullanılıyorsa her zaman sürüm 3 istemeyi ve politika yazarken etag eklemeyi önerir; etag eşzamanlı değişikliklerin birbirinin üzerine yazılmasını önler.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/iam/docs/policies",
+  "check": [
+   "always specify allow policy version 3 , and always include the etag field"
+  ],
+  "en": {
+   "question": "An automation script reads a project policy that contains conditional role bindings (IAM Conditions), adds a new member and writes it back. The script reads the policy without specifying a version. What does Google recommend?",
+   "options": [
+    "Remove the etag field; etags only slow down concurrent writes to the same policy",
+    "Always request policy version 3 and include the etag field when setting the policy",
+    "Replace the policy with an empty policy each time and re-add all bindings",
+    "Request version 1; version 1 also includes conditions and is more compatible"
+   ],
+   "explanation": "If a policy with conditions is read without a version or as version 1, the conditions aren't shown, and updating from that representation causes errors. Google recommends always requesting version 3 when you use IAM Conditions and including the etag when setting a policy; the etag prevents concurrent changes from overwriting each other."
+  }
+ },
+ {
+  "id": "ace-358",
+  "exam": "ACE",
+  "domain": 4,
+  "objective": "4.2",
+  "topic": "IAM ve servis hesapları",
+  "difficulty": "zor",
+  "question": "Güvenlik ekibi, bazı istisnai projelerde servis hesabı anahtarlarına izin vermek zorunda, ancak yeni oluşturulan her anahtarın en fazla 24 saat geçerli olmasını istiyor. Ne yapmalısınız?",
+  "options": [
+   "Her anahtar için Cloud Scheduler ile 24 saat sonra silme işi oluşturmak; Google bu amaç için bir kısıtlama sunmaz",
+   "constraints/iam.serviceAccountKeyExpiryHours kısıtlamasını 24h değeriyle uygulamak",
+   "Anahtarlara IAM koşulu (request.time) eklemek",
+   "constraints/iam.disableServiceAccountKeyCreation kısıtlamasını 24 saatlik bir zamanlamayla açıp kapatmak"
+  ],
+  "correct": [
+   1
+  ],
+  "explanation": "iam.serviceAccountKeyExpiryHours eski tip yönetilen kısıtlaması, yeni oluşturulan bir anahtarın kaç saat geçerli olacağını belirler (ör. 1h, 8h, 24h ... 2160h); süre dolunca anahtar kullanılamaz. Bu kısıtlama üst politikayla birleştirilemez; üst politikayı değiştirmeli veya miras almalısınız.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/resource-manager/docs/organization-policy/restricting-service-accounts",
+  "check": [
+   "constraints/iam.serviceaccountkeyexpiryhours"
+  ],
+  "en": {
+   "question": "The security team must allow service account keys in a few exceptional projects, but wants every newly created key to be valid for at most 24 hours. What should you do?",
+   "options": [
+    "Create a Cloud Scheduler job for each key to delete it after 24 hours; Google offers no constraint for this",
+    "Enforce the constraints/iam.serviceAccountKeyExpiryHours constraint with a value of 24h",
+    "Add an IAM condition (request.time) to the keys",
+    "Toggle the constraints/iam.disableServiceAccountKeyCreation constraint on and off on a 24-hour schedule"
+   ],
+   "explanation": "The iam.serviceAccountKeyExpiryHours legacy managed constraint sets how many hours a newly created key is valid (e.g. 1h, 8h, 24h ... 2160h); after that, the key expires and can't be used. This constraint can't be merged with a parent policy; you must replace or inherit the parent policy."
+  }
+ },
+ {
+  "id": "ace-359",
+  "exam": "ACE",
+  "domain": 4,
+  "objective": "4.2",
+  "topic": "IAM ve servis hesapları",
+  "difficulty": "orta",
+  "question": "Bir projede IAM politikasında 123456789012-compute@developer.gserviceaccount.com adlı bir hesabın Editor rolüne sahip olduğunu görüyorsunuz. Bu hesap nedir?",
+  "options": [
+   "Compute Engine service agent'ı; Google tarafından yönetilir ve rolleri değiştirilemez",
+   "Compute Engine varsayılan servis hesabı",
+   "Bir kullanıcının kendi oluşturduğu (user-managed) servis hesabı",
+   "App Engine varsayılan servis hesabı"
+  ],
+  "correct": [
+   1
+  ],
+  "explanation": "Compute Engine varsayılan servis hesabının biçimi PROJE_NUMARASI-compute@developer.gserviceaccount.com'dur. App Engine varsayılan hesabı PROJE_ID@appspot.gserviceaccount.com biçimindedir; kullanıcı tarafından yönetilen hesaplar ise AD@PROJE_ID.iam.gserviceaccount.com biçimindedir.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/iam/docs/service-account-types",
+  "check": [
+   "-compute@developer.gserviceaccount.com"
+  ],
+  "en": {
+   "question": "In a project's IAM policy, you see that an account named 123456789012-compute@developer.gserviceaccount.com has the Editor role. What is this account?",
+   "options": [
+    "The Compute Engine service agent; it's managed by Google and its roles can't be changed",
+    "The Compute Engine default service account",
+    "A user-managed service account that someone created",
+    "The App Engine default service account"
+   ],
+   "explanation": "The Compute Engine default service account has the format PROJECT_NUMBER-compute@developer.gserviceaccount.com. The App Engine default account has the format PROJECT_ID@appspot.gserviceaccount.com, and user-managed accounts use NAME@PROJECT_ID.iam.gserviceaccount.com."
+  }
+ },
+ {
+  "id": "ace-360",
+  "exam": "ACE",
+  "domain": 4,
+  "objective": "4.2",
+  "topic": "Serverless (Cloud Run, Functions, App Engine)",
+  "difficulty": "zor",
+  "question": "Bir Cloud Run servisi yalnızca tek bir Cloud Storage bucket'ından okuyor. Servis şu an hangi kimlikle çalıştığı belirtilmeden dağıtıldı. Google'ın önerdiği yapılandırma nedir?",
+  "options": [
+   "Servisi Owner rolüne sahip bir kullanıcının kimliğiyle çalıştırmak",
+   "Varsayılan Compute Engine servis hesabını kullanmaya devam etmek; bu hesap en az yetki ilkesine göre yapılandırılmıştır",
+   "Servisi, yalnızca o bucket'ta gereken rolü olan kullanıcı tarafından yönetilen bir servis hesabıyla dağıtmak",
+   "Bir servis hesabı anahtarı oluşturup GOOGLE_APPLICATION_CREDENTIALS ortam değişkeniyle servise vermek"
+  ],
+  "correct": [
+   2
+  ],
+  "explanation": "Cloud Run için önerilen hizmet kimliği, gereken en az izinlerle yapılandırılmış kullanıcı tarafından yönetilen bir servis hesabıdır. Belirtilmezse Compute Engine varsayılan servis hesabı kullanılır. Google, Cloud Run'da GOOGLE_APPLICATION_CREDENTIALS ayarlanmamasını ve bunun yerine servis hesabı atanmasını söyler.",
+  "source": "builtin",
+  "source_url": "https://docs.cloud.google.com/run/docs/securing/service-identity",
+  "check": [
+   "user-managed service account (recommended)"
+  ],
+  "en": {
+   "question": "A Cloud Run service only reads from a single Cloud Storage bucket. It was deployed without specifying which identity it runs as. What configuration does Google recommend?",
+   "options": [
+    "Run the service with the identity of a user who has the Owner role",
+    "Keep using the Compute Engine default service account; it's configured for least privilege",
+    "Deploy it with a user-managed service account that has only the needed role on that bucket",
+    "Create a service account key and give it to the service with the GOOGLE_APPLICATION_CREDENTIALS environment variable"
+   ],
+   "explanation": "The recommended Cloud Run service identity is a user-managed service account configured with the minimal permissions it needs. If none is specified, the Compute Engine default service account is used. Google says never to set GOOGLE_APPLICATION_CREDENTIALS on Cloud Run and to assign a service account instead."
+  }
  }
 ]

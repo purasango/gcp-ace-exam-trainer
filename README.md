@@ -10,7 +10,7 @@ Hazır Türkçe soru bankası, gerçek sınavı taklit eden süreli mod ve ilerl
 
 ## Özellikler
 
-- **300 hazır ACE sorusu (Türkçe + İngilizce)**: [resmi sınav rehberinin](https://services.google.com/fh/files/misc/associate_cloud_engineer_exam_guide_english.pdf)
+- **360 hazır ACE sorusu (Türkçe + İngilizce)**: [resmi sınav rehberinin](https://services.google.com/fh/files/misc/associate_cloud_engineer_exam_guide_english.pdf)
   alt başlıklarına (1.1–4.2) göre dağıtılmış ve rehberdeki alan ağırlıklarına (%20 / %30 / %30 / %20) yakın;
   14 konu başlığıyla etiketli
   (IAM, Compute Engine, GKE, Cloud Run, VPC, Cloud Storage, veritabanları, Logging/Monitoring…).
