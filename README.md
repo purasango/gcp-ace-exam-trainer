@@ -45,6 +45,19 @@ Bu kontrol, doğru cevaptaki bilginin resmi kaynakta geçtiğini doğrular; soru
 etmez. Sorular özgündür, gerçek sınav soruları değildir. Ek pratik için Google'ın resmi
 [örnek soruları](https://cloud.google.com/learn/certification/cloud-engineer) en güvenilir kaynaktır.
 
+### Soru kalitesi kuralları
+
+Sorular gerçek sınav gibi bilgiyle çözülsün, sınav tekniğiyle (ipucu avlayarak) çözülmesin diye
+`tests/test_quality.py` şu kuralları denetler:
+
+- Doğru cevap çoğunlukla en uzun şık olmamalı (sorulara göre %30'un altında).
+- "always / never / only" gibi kesin ifadeler yanlış şıklarda belirgin şekilde daha sık geçmemeli.
+- Doğru cevabın konumu dengeli dağılmalı.
+- Bankanın en az %8'i "iki seçenek seçin" tipinde olmalı (şu an 30 soru).
+- Aynı kavramı soran neredeyse aynı iki soru olmamalı.
+
+Yeni soru eklerken `python -m unittest discover -s tests` komutunu çalıştırın.
+
 ## Kurulum
 
 Tek gereksinim **Python 3.10+**. [python.org](https://www.python.org/downloads/) kurulumu Tkinter'ı içerir;
